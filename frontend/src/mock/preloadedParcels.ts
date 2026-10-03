@@ -24,34 +24,6 @@ export interface PreloadedParcel {
 
 export const PRELOADED_PARCELS: PreloadedParcel[] = [
   {
-    cadastral_code: "0100123456",
-    name: "Chișinău Agro-Hub (Stăuceni)",
-    region: "Centru (Chișinău)",
-    area_ha: 15.5,
-    landuse: "Teren agricol arabil de cultură mare",
-    coordinates: [
-      [28.8300, 47.0100],
-      [28.8450, 47.0100],
-      [28.8450, 47.0220],
-      [28.8300, 47.0220],
-    ],
-    soil_profile: {
-      type: "Cernoziom tipic moderat humifer",
-      bonitate_points: 76,
-      humus_pct: 3.8,
-      ph: 7.2,
-      erosion_grade: "slab",
-    },
-    climate_telemetry: {
-      nearest_station_id: "agro-st-chisinau-01",
-      distance_km: 4.2,
-      soil_moisture_pct: 42.0,
-      leaf_wetness_hours: 3.5,
-      precipitation_last_30d_mm: 28.0,
-      eto_evapotranspiration_mm: 4.5,
-    },
-  },
-  {
     cadastral_code: "0300987654",
     name: "Câmpul de Elită Bălți (Răuțel)",
     region: "Nord (Bălți)",

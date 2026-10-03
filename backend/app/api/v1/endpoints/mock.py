@@ -23,52 +23,52 @@ async def get_contract_sample():
     
     # Răspuns direct garantat
     return {
-        "parcel_id": "parc-001",
-        "cadastral_code": "0100123456",
-        "area_ha": 15.5,
-        "coordinates": [[28.83, 47.01], [28.84, 47.01], [28.84, 47.02], [28.83, 47.02]],
+        "parcel_id": "parc-balti-001",
+        "cadastral_code": "0300987654",
+        "area_ha": 28.4,
+        "coordinates": [[27.915, 47.755], [27.935, 47.755], [27.935, 47.77], [27.915, 47.77]],
         "soil_profile": {
-            "type": "Cernoziom tipic moderat humifer",
-            "bonitate_points": 76,
-            "humus_pct": 3.8,
-            "ph": 7.2,
-            "erosion_grade": "slab"
+            "type": "Cernoziom levigat și tipic lutos (Stepa Bălților)",
+            "bonitate_points": 84,
+            "humus_pct": 4.2,
+            "ph": 6.8,
+            "erosion_grade": "lipsa"
         },
         "climate_telemetry": {
-            "nearest_station_id": "agro-st-chisinau-01",
-            "distance_km": 4.2,
-            "soil_moisture_pct": 42.0,
-            "leaf_wetness_hours": 3.5,
-            "precipitation_last_30d_mm": 28.0,
-            "eto_evapotranspiration_mm": 4.5
+            "nearest_station_id": "agro-st-balti-01",
+            "distance_km": 6.1,
+            "soil_moisture_pct": 46.5,
+            "leaf_wetness_hours": 4.0,
+            "precipitation_last_30d_mm": 36.0,
+            "eto_evapotranspiration_mm": 3.8
         },
         "recommended_crops": [
             {
-                "crop_name": "Floarea-soarelui",
-                "suitability_score": 92,
-                "estimated_yield": {"min_t_ha": 2.4, "max_t_ha": 3.2},
-                "estimated_costs_mdl_ha": 11500.0,
-                "estimated_revenue_mdl_ha": 22400.0,
-                "net_profit_mdl_ha": 10900.0
+                "crop_name": "Grau de toamna",
+                "suitability_score": 94,
+                "estimated_yield": {"min_t_ha": 4.8, "max_t_ha": 6.2},
+                "estimated_costs_mdl_ha": 12200.0,
+                "estimated_revenue_mdl_ha": 21500.0,
+                "net_profit_mdl_ha": 9300.0
             },
             {
-                "crop_name": "Grau de toamna",
-                "suitability_score": 88,
-                "estimated_yield": {"min_t_ha": 4.2, "max_t_ha": 5.4},
-                "estimated_costs_mdl_ha": 12000.0,
-                "estimated_revenue_mdl_ha": 19000.0,
-                "net_profit_mdl_ha": 7000.0
+                "crop_name": "Floarea-soarelui",
+                "suitability_score": 91,
+                "estimated_yield": {"min_t_ha": 2.6, "max_t_ha": 3.4},
+                "estimated_costs_mdl_ha": 11800.0,
+                "estimated_revenue_mdl_ha": 23800.0,
+                "net_profit_mdl_ha": 12000.0
             }
         ],
         "ai_guidance": {
-            "summary": "Solul are un potențial ridicat de bonitate (76p), însă rezerva de apă este moderat-limitativă.",
+            "summary": "Solul are o bonitate excelentă (84p), specifică Stepei Bălților. Rapița și Grâul de toamnă oferă cel mai scăzut risc agronomic datorită bunei rezerve hidrice din sol.",
             "risks": [
-                "Deficit hidric în faza de înflorire",
-                "Risc scăzut de fuzarioză datorită umidității reduse pe frunză"
+                "Deficit hidric ocazional în faza de umplere a bobului",
+                "Risc scăzut de fuzarioză dacă se respectă asolamentul"
             ],
             "actionable_steps": [
-                "Semănat timpuriu pentru valorificarea umidității de iarnă",
-                "Aplicare îngrășăminte cu fosfor la pregătirea terenului"
+                "Fertilizare fracționată cu azot la reluarea vegetației în primăvară",
+                "Efectuarea arăturii adânci sau a scarificării pentru spargerea hardpanului"
             ]
         }
     }
