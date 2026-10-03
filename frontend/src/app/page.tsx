@@ -28,7 +28,7 @@ export default function Home() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isReportOpen, setIsReportOpen] = useState(false);
-  const [currentCoords, setCurrentCoords] = useState<number[][]>(DEFAULT_PARCEL_DATA.coordinates);
+  const [currentCoords, setCurrentCoords] = useState<number[][]>([]);
   const activeRequestIdRef = useRef<number>(0);
 
   useEffect(() => {
@@ -43,9 +43,16 @@ export default function Home() {
     overrideCoords?: number[][],
     officialAreaHa?: number
   ) => {
+    const coordsToSend = overrideCoords || currentCoords;
+    if (!coordsToSend || coordsToSend.length < 3) {
+      const mapElement = document.getElementById("map");
+      if (mapElement) {
+        mapElement.scrollIntoView({ behavior: "smooth" });
+      }
+      return;
+    }
     const currentReqId = ++activeRequestIdRef.current;
     setIsAnalyzing(true);
-    const coordsToSend = overrideCoords || currentCoords;
     const targetCadastral = cadastralCode || analysis.cadastral_code || undefined;
     const targetArea =
       officialAreaHa && officialAreaHa > 0
@@ -120,12 +127,16 @@ export default function Home() {
             </p>
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <button
-                onClick={() => handleRunAnalysis()}
-                disabled={isAnalyzing}
-                className="hero-action inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-emerald-700/20 transition hover:-translate-y-0.5 hover:bg-emerald-700 disabled:cursor-wait disabled:opacity-60"
+                onClick={() => {
+                  const mapElement = document.getElementById("map");
+                  if (mapElement) {
+                    mapElement.scrollIntoView({ behavior: "smooth" });
+                  }
+                }}
+                className="hero-action inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-emerald-700/20 transition hover:-translate-y-0.5 hover:bg-emerald-700"
               >
-                <Sparkles className={`h-4 w-4 ${isAnalyzing ? "animate-spin" : ""}`} />
-                {isAnalyzing ? "Se analizează..." : "Începe analiza"}
+                <Sparkles className="h-4 w-4" />
+                Selectează parcela pe hartă
                 <ArrowUpRight className="h-4 w-4" />
               </button>
             </div>
@@ -165,8 +176,9 @@ export default function Home() {
             </div>
             <button
               onClick={() => handleRunAnalysis()}
-              disabled={isAnalyzing}
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:border-emerald-300 hover:text-emerald-700 disabled:opacity-60"
+              disabled={isAnalyzing || currentCoords.length < 3}
+              title={currentCoords.length < 3 ? "Selectează mai întâi o parcelă pe hartă" : "Actualizează datele"}
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:border-emerald-300 hover:text-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <RefreshCw className={`h-3.5 w-3.5 ${isAnalyzing ? "animate-spin" : ""}`} />
               Actualizează datele

@@ -62,9 +62,11 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
   const tileLayersRef = useRef<{ [key: string]: any }>({});
   const leafletRef = useRef<any>(null);
 
-  const [currentCoords, setCurrentCoords] = useState<number[][]>(coordinates);
+  const [currentCoords, setCurrentCoords] = useState<number[][]>(coordinates || []);
   const [calculatedArea, setCalculatedArea] = useState<number>(
-    areaHa || calculatePolygonAreaHa(coordinates)
+    coordinates && coordinates.length >= 3
+      ? (areaHa && areaHa > 0 ? areaHa : calculatePolygonAreaHa(coordinates))
+      : 0
   );
   const [inputCode, setInputCode] = useState<string>(cadastralCode || "");
   const [activeLayer, setActiveLayer] = useState<"satellite" | "streets">("satellite");
@@ -89,7 +91,15 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
   // Actualizare poligon pe hartă cu noduri de ajustare pe colțuri
   const renderPolygon = useCallback(
     (L: any, coords: number[][], fitBounds: boolean = false) => {
-      if (!coords || coords.length < 3 || !polygonRef.current) return;
+      if (!polygonRef.current) return;
+
+      if (!coords || coords.length < 3) {
+        polygonRef.current.setLatLngs([]);
+        if (markersGroupRef.current) {
+          markersGroupRef.current.clearLayers();
+        }
+        return;
+      }
 
       const clean = coords.filter((pt, i) => {
         if (i === 0) return true;
@@ -203,6 +213,13 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
             setCalculatedArea(areaToUse);
             onPolygonChange(parcel.coordinates);
             renderPolygon(L, parcel.coordinates, false);
+            if (map.getZoom() < 13 && polygonRef.current) {
+              map.fitBounds(polygonRef.current.getBounds(), {
+                padding: [50, 50],
+                maxZoom: 16,
+                animate: true,
+              });
+            }
             onAnalyze(parcel.cadastral_code, parcel.coordinates, areaToUse);
             setStatusMessage({
               type: "success",
@@ -300,12 +317,14 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
         shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
       });
 
-      const centerLat = coordinates[0]?.[1] || 47.7550;
-      const centerLng = coordinates[0]?.[0] || 27.9150;
+      const hasCoords = coordinates && coordinates.length >= 3;
+      const centerLat = hasCoords ? coordinates[0][1] : 47.15;
+      const centerLng = hasCoords ? coordinates[0][0] : 28.55;
+      const initialZoom = hasCoords ? 14 : 8;
 
       const map = L.map(containerRef.current, {
         center: [centerLat, centerLng],
-        zoom: 14,
+        zoom: initialZoom,
         zoomControl: true,
         ...({ tap: false } as any),
       });
@@ -383,8 +402,10 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
       drawLayerRef.current = drawLayer;
       mapRef.current = map;
 
-      // Randare poligon inițial
-      renderPolygon(L, coordinates, true);
+      // Randare poligon inițial doar dacă există coordonate valide
+      if (coordinates && coordinates.length >= 3) {
+        renderPolygon(L, coordinates, true);
+      }
 
       // Event listener pentru click / tap pe suprafața liberă a hărții
       map.on("click", (e: any) => {
@@ -464,6 +485,13 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
       }
       if (leafletRef.current && polygonRef.current) {
         renderPolygon(leafletRef.current, coordinates, false);
+      }
+    } else if (!coordinates || coordinates.length === 0) {
+      setCurrentCoords([]);
+      setCalculatedArea(0);
+      setInputCode(cadastralCode || "");
+      if (leafletRef.current && polygonRef.current) {
+        renderPolygon(leafletRef.current, [], false);
       }
     }
   }, [coordinates, areaHa, cadastralCode, renderPolygon]);
@@ -626,7 +654,7 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
               Suprafață
             </div>
             <div className="text-sm font-extrabold text-slate-900">
-              {calculatedArea.toFixed(2)} ha
+              {calculatedArea > 0 ? `${calculatedArea.toFixed(2)} ha` : "-- ha"}
             </div>
           </div>
 
@@ -642,8 +670,9 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
               </button>
               <button
                 onClick={() => onAnalyze(inputCode, currentCoords, calculatedArea)}
-                disabled={isAnalyzing}
-                className="flex items-center gap-2 rounded-xl bg-agri-600 px-3 py-2 text-xs font-bold text-white shadow-md shadow-emerald-700/20 transition-all hover:bg-agri-700 disabled:opacity-50 sm:px-4 sm:text-sm"
+                disabled={isAnalyzing || currentCoords.length < 3}
+                title={currentCoords.length < 3 ? "Selectează mai întâi o parcelă pe hartă" : "Analizează parcela"}
+                className="flex items-center gap-2 rounded-xl bg-agri-600 px-3 py-2 text-xs font-bold text-white shadow-md shadow-emerald-700/20 transition-all hover:bg-agri-700 disabled:opacity-50 disabled:cursor-not-allowed sm:px-4 sm:text-sm"
               >
                 <Sparkles className={`w-4 h-4 ${isAnalyzing ? "animate-spin" : ""}`} />
                 <span className="hidden sm:inline">
@@ -707,7 +736,15 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
         <div className="absolute bottom-4 left-4 z-20 flex flex-wrap items-center gap-2 rounded-xl border border-white/80 bg-white/95 px-3 py-2 text-xs font-medium text-slate-700 shadow-xl shadow-slate-900/10 backdrop-blur">
           <MapPin className="h-4 w-4 shrink-0 text-agri-600" />
           <span>
-            Poligon activ: <strong>{currentCoords.length} noduri GPS</strong>
+            {currentCoords.length >= 3 ? (
+              <>
+                Poligon activ: <strong>{currentCoords.length} noduri GPS</strong>
+              </>
+            ) : (
+              <>
+                Nicio parcelă selectată <span className="text-slate-400 font-normal">(apasă pe teren sau caută cod)</span>
+              </>
+            )}
             {showSoils && <span className="ml-1.5 text-emerald-700 font-bold">&bull; Soluri WMS ON</span>}
           </span>
         </div>
@@ -716,25 +753,45 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
         <div className="absolute bottom-4 right-4 z-20 hidden w-64 rounded-2xl border border-white/80 bg-white/95 p-4 shadow-xl shadow-slate-900/15 backdrop-blur md:block">
           <div className="flex items-center justify-between gap-2">
             <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">
-              Parcelă selectată
+              {currentCoords.length >= 3 ? "Parcelă selectată" : "Hartă Moldova"}
             </span>
-            <span className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_0_4px_rgba(34,197,94,0.14)]" />
+            <span
+              className={`h-2 w-2 rounded-full ${
+                currentCoords.length >= 3
+                  ? "bg-emerald-500 shadow-[0_0_0_4px_rgba(34,197,94,0.14)]"
+                  : "bg-amber-400 shadow-[0_0_0_4px_rgba(251,191,36,0.14)]"
+              }`}
+            />
           </div>
           <div className="mt-3 flex items-start gap-2">
             <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
             <div className="min-w-0">
-              <p className="font-bold text-slate-900">Parcela activă</p>
-              <p className="truncate text-xs font-mono font-semibold text-slate-500">#{inputCode || cadastralCode || "Nedefinit"}</p>
+              <p className="font-bold text-slate-900">
+                {currentCoords.length >= 3 ? "Parcela activă" : "Selectează parcelă"}
+              </p>
+              <p className="truncate text-xs font-mono font-semibold text-slate-500">
+                {inputCode || cadastralCode ? `#${inputCode || cadastralCode}` : "Apasă pe teren sau caută cod"}
+              </p>
             </div>
           </div>
           <p className="mt-3 text-3xl font-extrabold tracking-tight text-slate-950">
-            {calculatedArea.toFixed(2)}{" "}
+            {calculatedArea > 0 ? calculatedArea.toFixed(2) : "--"}{" "}
             <span className="text-sm font-bold text-slate-400">ha</span>
           </p>
           <div className="mt-3 flex items-center justify-between gap-2 border-t border-slate-100 pt-3 text-xs">
-            <span className="truncate text-slate-500">{isAnalyzing ? "Se analizează solul..." : soilType}</span>
+            <span className="truncate text-slate-500">
+              {isAnalyzing
+                ? "Se analizează solul..."
+                : currentCoords.length >= 3
+                ? soilType
+                : "Așteptare selecție teren"}
+            </span>
             <span className="shrink-0 rounded-lg bg-emerald-50 px-2 py-1 font-bold text-emerald-700">
-              {isAnalyzing ? "..." : `${soilBonitate}/100`}
+              {isAnalyzing
+                ? "..."
+                : currentCoords.length >= 3
+                ? `${soilBonitate}/100`
+                : "—"}
             </span>
           </div>
         </div>

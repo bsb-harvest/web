@@ -1,29 +1,24 @@
 import { ParcelAnalysisResponse } from "@/lib/types";
 
 export const DEFAULT_PARCEL_DATA: ParcelAnalysisResponse = {
-  parcel_id: "parc-balti-001",
-  cadastral_code: "0300987654",
-  area_ha: 28.4,
-  coordinates: [
-    [27.9150, 47.7550],
-    [27.9350, 47.7550],
-    [27.9350, 47.7700],
-    [27.9150, 47.7700]
-  ],
+  parcel_id: "parc-md-default",
+  cadastral_code: null,
+  area_ha: 0,
+  coordinates: [],
   soil_profile: {
-    type: "Cernoziom levigat și tipic lutos (Stepa Bălților)",
-    bonitate_points: 84,
-    humus_pct: 4.2,
+    type: "Cernoziom tipic și levigat (Republica Moldova)",
+    bonitate_points: 82,
+    humus_pct: 3.8,
     ph: 6.8,
     erosion_grade: "lipsa"
   },
   climate_telemetry: {
-    nearest_station_id: "agro-st-balti-01",
-    distance_km: 6.1,
-    soil_moisture_pct: 46.5,
+    nearest_station_id: "agro-st-md-01",
+    distance_km: 5.2,
+    soil_moisture_pct: 45.0,
     leaf_wetness_hours: 4.0,
-    precipitation_last_30d_mm: 36.0,
-    eto_evapotranspiration_mm: 3.8
+    precipitation_last_30d_mm: 35.0,
+    eto_evapotranspiration_mm: 3.6
   },
   recommended_crops: [
     {
@@ -92,15 +87,15 @@ export const DEFAULT_PARCEL_DATA: ParcelAnalysisResponse = {
     }
   ],
   ai_guidance: {
-    summary: "Solul din parcela selectată (Cernoziom levigat și tipic lutos din Stepa Bălților) prezintă o notă de bonitate excelentă (84p), fiind una dintre cele mai fertile zone agricole din Republica Moldova. Rapița oferă profitul net maxim, iar Grâul de toamnă are cel mai scăzut risc agronomic datorită bunei rezerve de umiditate din sol (46.5%).",
+    summary: "Selectează o parcelă pe hartă sau introdu un număr cadastral pentru a obține o analiză pedologică și climatică personalizată. Datele demonstrative afișate prezintă valorile medii de referință pentru Republica Moldova.",
     risks: [
-      "Deficit hidric ocazional în faza de umplere a bobului la cereale în verile secetoase.",
-      "Risc scăzut spre moderat de fuzarioză dacă survin ploi abundente în faza de înflorire."
+      "Deficit hidric periodic în lunile iulie-august pe teritoriul Republicii Moldova.",
+      "Variații locale de fertilitate și relief în funcție de panta terenului."
     ],
     actionable_steps: [
-      "Fertilizare fracționată cu azot la reluarea vegetației în primăvară (faza de înfrățire și alungire a paiului).",
-      "Efectuarea unei treceri cu grapa sau tăvălugul pentru ruperea crustei și limitarea evapotranspirației.",
-      "Monitorizarea apariției dăunătorilor specifici (gândacul ghebos, ploșnița cerealelor) înainte de faza de burduf."
+      "Identifică conturul exact al parcelei tale pe harta interactivă.",
+      "Consultă bonitatea specifică a solului și rezerva de apă din zona ta.",
+      "Solicită asistentului Dr. Agro recomandări detaliate de rotație și fertilizare."
     ]
   }
 };
