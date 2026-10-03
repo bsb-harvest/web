@@ -94,7 +94,9 @@ export const FinancialChart: React.FC<FinancialChartProps> = ({
       </div>
 
       <div className="space-y-4">
-        {crops.map((crop) => {
+        {[...crops]
+          .sort((a, b) => b.net_profit_mdl_ha - a.net_profit_mdl_ha)
+          .map((crop) => {
           const scaledCost = crop.estimated_costs_mdl_ha * multiplier;
           const scaledProfit = crop.net_profit_mdl_ha * multiplier;
 

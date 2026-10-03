@@ -36,10 +36,23 @@ export const CropCardsGrid: React.FC<CropCardsGridProps> = ({
   onToggleViewMode,
 }) => {
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
+  const [sortBy, setSortBy] = useState<"suitability" | "profit">("suitability");
 
   const toggleExpand = (idx: number) => {
     setExpandedIndex(expandedIndex === idx ? null : idx);
   };
+
+  const handleSortChange = (mode: "suitability" | "profit") => {
+    setSortBy(mode);
+    setExpandedIndex(null);
+  };
+
+  const sortedCrops = [...crops].sort((a, b) =>
+    sortBy === "profit"
+      ? b.net_profit_mdl_ha - a.net_profit_mdl_ha
+      : b.suitability_score - a.suitability_score ||
+        b.net_profit_mdl_ha - a.net_profit_mdl_ha
+  );
 
   const isTotal = viewMode === "total" && areaHa > 0;
   const multiplier = isTotal ? areaHa : 1;
@@ -57,7 +70,32 @@ export const CropCardsGrid: React.FC<CropCardsGridProps> = ({
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Comutator sortare */}
+          <div className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1 text-xs font-bold shadow-2xs">
+            <span className="px-2 text-[10px] uppercase tracking-wide text-slate-400">Sortează</span>
+            <button
+              onClick={() => handleSortChange("suitability")}
+              className={`rounded-lg px-3 py-1.5 transition-all ${
+                sortBy === "suitability"
+                  ? "bg-white text-slate-900 shadow-xs"
+                  : "text-slate-500 hover:text-slate-900"
+              }`}
+            >
+              Potrivire
+            </button>
+            <button
+              onClick={() => handleSortChange("profit")}
+              className={`rounded-lg px-3 py-1.5 transition-all ${
+                sortBy === "profit"
+                  ? "bg-emerald-600 text-white shadow-xs"
+                  : "text-slate-500 hover:text-slate-900"
+              }`}
+            >
+              Profit
+            </button>
+          </div>
+
           {/* Comutator mod afișare */}
           <div className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1 text-xs font-bold shadow-2xs">
             <button
@@ -96,7 +134,7 @@ export const CropCardsGrid: React.FC<CropCardsGridProps> = ({
 
       {/* Grid Cartonașe Culturi */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {crops.map((crop, idx) => {
+        {sortedCrops.map((crop, idx) => {
           const isTop = idx === 0;
           const isExpanded = expandedIndex === idx;
 
@@ -162,7 +200,8 @@ export const CropCardsGrid: React.FC<CropCardsGridProps> = ({
                         </span>
                         {isTop && (
                           <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-emerald-700">
-                            <Award className="h-3 w-3" /> Top profit
+                            <Award className="h-3 w-3" />{" "}
+                            {sortBy === "profit" ? "Cel mai mare profit" : "Cea mai potrivită"}
                           </span>
                         )}
                       </div>

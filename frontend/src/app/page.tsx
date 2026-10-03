@@ -187,7 +187,7 @@ export default function Home() {
               </div>
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-[0.13em] text-slate-400">
-                  {isTotalView ? `Profit (${analysis.area_ha} ha)` : "Profit top (1 ha)"}
+                  {isTotalView ? `Profit (${analysis.area_ha} ha)` : "Profit recomandat (1 ha)"}
                 </p>
                 <p className="mt-1 text-3xl font-extrabold tracking-tight text-emerald-700">
                   {Math.round(bestProfit).toLocaleString("ro-MD")}{" "}
