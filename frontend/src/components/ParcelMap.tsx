@@ -1,91 +1,241 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
-import { MapPin, Search, Sparkles } from "lucide-react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
+import {
+  Search,
+  Sparkles,
+  Layers,
+  MapPin,
+  RotateCcw,
+  Edit3,
+  Check,
+  X,
+  Loader2,
+  CheckCircle2,
+  AlertCircle,
+  Eye,
+  EyeOff,
+} from "lucide-react";
+import {
+  PRELOADED_PARCELS,
+  findPreloadedParcel,
+  PreloadedParcel,
+} from "@/mock/preloadedParcels";
 
 interface ParcelMapProps {
-  coordinates: number[][];
+  coordinates: number[][]; // [[lng, lat], ...]
   areaHa: number;
   cadastralCode?: string | null;
   soilBonitate?: number;
   soilType?: string;
   onPolygonChange: (coords: number[][]) => void;
-  onAnalyze: (cadastralCode?: string) => void;
+  onAnalyze: (cadastralCode?: string, overrideCoords?: number[][]) => void;
   isAnalyzing: boolean;
 }
 
-const PRESET_PARCELS = [
-  {
-    name: "Chișinău (Centru)",
-    code: "0100123456",
-    coords: [
-      [28.8300, 47.0100],
-      [28.8450, 47.0100],
-      [28.8450, 47.0220],
-      [28.8300, 47.0220]
-    ]
-  },
-  {
-    name: "Bălți (Nord - Cernoziom)",
-    code: "0300987654",
-    coords: [
-      [27.9150, 47.7550],
-      [27.9350, 47.7550],
-      [27.9350, 47.7700],
-      [27.9150, 47.7700]
-    ]
-  },
-  {
-    name: "Cahul (Sud - Zonă Aridă)",
-    code: "1700456123",
-    coords: [
-      [28.1800, 45.8950],
-      [28.2000, 45.8950],
-      [28.2000, 45.9120],
-      [28.1800, 45.9120]
-    ]
-  },
-  {
-    name: "Orhei (Codru)",
-    code: "6400789456",
-    coords: [
-      [28.8100, 47.3750],
-      [28.8300, 47.3750],
-      [28.8300, 47.3900],
-      [28.8100, 47.3900]
-    ]
+// Calcul determinist al ariei poligonului în hectare (proiecție sferică WGS84)
+function calculatePolygonAreaHa(coords: number[][]): number {
+  if (!coords || coords.length < 3) return 0;
+  let area = 0;
+  const n = coords.length;
+  for (let i = 0; i < n; i++) {
+    const j = (i + 1) % n;
+    const xi =
+      (coords[i][0] * Math.PI * 6378137 * Math.cos((coords[i][1] * Math.PI) / 180)) / 180;
+    const yi = (coords[i][1] * Math.PI * 6378137) / 180;
+    const xj =
+      (coords[j][0] * Math.PI * 6378137 * Math.cos((coords[j][1] * Math.PI) / 180)) / 180;
+    const yj = (coords[j][1] * Math.PI * 6378137) / 180;
+    area += xi * yj - xj * yi;
   }
-];
+  return Math.abs(area / 2) / 10000;
+}
 
 export const ParcelMap: React.FC<ParcelMapProps> = ({
   coordinates,
   areaHa,
   cadastralCode,
-  soilBonitate = 0,
-  soilType,
+  soilBonitate = 76,
+  soilType = "Cernoziom tipic",
   onPolygonChange,
   onAnalyze,
   isAnalyzing,
 }) => {
-  const mapContainerRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<any>(null);
-  const polygonLayerRef = useRef<any>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<any>(null);
+  const polygonRef = useRef<any>(null);
   const markersGroupRef = useRef<any>(null);
+  const drawLayerRef = useRef<any>(null);
+  const soilLayerRef = useRef<any>(null);
+  const cadastreLayerRef = useRef<any>(null);
+  const tileLayersRef = useRef<{ [key: string]: any }>({});
+  const leafletRef = useRef<any>(null);
 
-  const [inputCode, setInputCode] = useState(cadastralCode || "0100123456");
-  const [activeLayer, setActiveLayer] = useState<"satellite" | "streets">("satellite");
   const [currentCoords, setCurrentCoords] = useState<number[][]>(coordinates);
+  const [calculatedArea, setCalculatedArea] = useState<number>(
+    areaHa || calculatePolygonAreaHa(coordinates)
+  );
+  const [inputCode, setInputCode] = useState<string>(cadastralCode || "0100123456");
+  const [activeLayer, setActiveLayer] = useState<"satellite" | "streets">("satellite");
+  const [showSoils, setShowSoils] = useState<boolean>(true);
+  const [showCadastre, setShowCadastre] = useState<boolean>(false);
 
-  // Inițializare hartă Leaflet pe client
+  const [isDrawing, setIsDrawing] = useState<boolean>(false);
+  const [drawPoints, setDrawPoints] = useState<number[][]>([]);
+  const [isSearching, setIsSearching] = useState<boolean>(false);
+  const [statusMessage, setStatusMessage] = useState<{
+    type: "success" | "warning" | "error";
+    text: string;
+  } | null>(null);
+
+  const isDrawingRef = useRef(false);
+  isDrawingRef.current = isDrawing;
+
+  const drawPointsRef = useRef<number[][]>([]);
+  drawPointsRef.current = drawPoints;
+
+  // Actualizare poligon pe hartă cu markere de ajustare pe colțuri
+  const renderPolygon = useCallback(
+    (L: any, coords: number[][], fitBounds: boolean = false) => {
+      if (!coords || coords.length < 3 || !polygonRef.current) return;
+
+      const clean = coords.filter((pt, i) => {
+        if (i === 0) return true;
+        const prev = coords[i - 1];
+        return Math.hypot(pt[0] - prev[0], pt[1] - prev[1]) > 0.00002;
+      });
+
+      const latLngs = clean.map((pt) => [pt[1], pt[0]]);
+      polygonRef.current.setLatLngs(latLngs as any);
+
+      if (markersGroupRef.current) {
+        markersGroupRef.current.clearLayers();
+
+        if (latLngs.length <= 30) {
+          const cornerIcon = L.divIcon({
+            className: "corner-handle",
+            html: `<div style="
+              width: 14px;
+              height: 14px;
+              background: #ffffff;
+              border: 3px solid #16a34a;
+              border-radius: 50%;
+              box-shadow: 0 2px 6px rgba(0,0,0,0.45);
+              cursor: grab;
+              transform: translate(-7px, -7px);
+            "></div>`,
+            iconSize: [0, 0],
+          });
+
+          const working = [...latLngs];
+
+          latLngs.forEach((latLng, idx) => {
+            const marker = L.marker(latLng as any, {
+              draggable: true,
+              icon: cornerIcon,
+              title: `Colț #${idx + 1} (Trage pentru a ajusta)`,
+            });
+
+            marker.on("drag", (e: any) => {
+              const pos = e.target.getLatLng();
+              working[idx] = [pos.lat, pos.lng];
+              polygonRef.current.setLatLngs(working as any);
+            });
+
+            marker.on("dragend", () => {
+              const newCoords = working.map((pt: any) => [
+                Number(pt[1].toFixed(5)),
+                Number(pt[0].toFixed(5)),
+              ]);
+              setCurrentCoords(newCoords);
+              const newArea = calculatePolygonAreaHa(newCoords);
+              setCalculatedArea(newArea);
+              onPolygonChange(newCoords);
+              renderPolygon(L, newCoords, false);
+            });
+
+            markersGroupRef.current.addLayer(marker);
+          });
+        }
+      }
+
+      if (fitBounds && mapRef.current) {
+        mapRef.current.invalidateSize();
+        mapRef.current.fitBounds(polygonRef.current.getBounds(), {
+          padding: [50, 50],
+          maxZoom: 16,
+          animate: true,
+        });
+      }
+    },
+    [onPolygonChange]
+  );
+
+  // Click pe hartă pentru identificare parcelă
+  const handleMapClick = useCallback(
+    async (lat: number, lng: number) => {
+      if (isDrawingRef.current) return;
+
+      const L = leafletRef.current;
+      const map = mapRef.current;
+      if (!L || !map) return;
+
+      // 1. Verificare în mostrele locale preîncărcate
+      const localMatch = findPreloadedParcel(lat, lng);
+      if (localMatch) {
+        setInputCode(localMatch.cadastral_code);
+        setCurrentCoords(localMatch.coordinates);
+        setCalculatedArea(localMatch.area_ha);
+        onPolygonChange(localMatch.coordinates);
+        renderPolygon(L, localMatch.coordinates, false);
+        onAnalyze(localMatch.cadastral_code, localMatch.coordinates);
+        setStatusMessage({
+          type: "success",
+          text: `Parcelă identificată (${localMatch.region}): Cod ${localMatch.cadastral_code} • ${localMatch.area_ha} ha • ${localMatch.name}`,
+        });
+        return;
+      }
+
+      // 2. Căutare online prin proxy cadastru
+      try {
+        setIsSearching(true);
+        const res = await fetch(`/api/cadastre?lat=${lat}&lng=${lng}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.coordinates && data.coordinates.length >= 3) {
+            setInputCode(data.cadastral_code);
+            setCurrentCoords(data.coordinates);
+            setCalculatedArea(data.area_ha);
+            onPolygonChange(data.coordinates);
+            renderPolygon(L, data.coordinates, true);
+            onAnalyze(data.cadastral_code, data.coordinates);
+            setStatusMessage({
+              type: "success",
+              text: `Parcelă identificată prin Cadastru Oficial: Cod ${data.cadastral_code} (${data.area_ha} ha)`,
+            });
+            return;
+          }
+        }
+      } catch {
+        // Fallback silențios
+      } finally {
+        setIsSearching(false);
+      }
+    },
+    [onPolygonChange, onAnalyze, renderPolygon]
+  );
+
+  // Inițializare hartă Leaflet cu straturi oficiale
   useEffect(() => {
-    if (typeof window === "undefined" || !mapContainerRef.current) return;
+    if (typeof window === "undefined" || !containerRef.current || mapRef.current) return;
 
     let isMounted = true;
 
     import("leaflet").then((L) => {
-      if (!isMounted) return;
+      if (!isMounted || !containerRef.current) return;
+      leafletRef.current = L;
 
-      // Fix pentru iconițele implicite Leaflet în bundler
+      // Fix iconițe Leaflet
       delete (L.Icon.Default.prototype as any)._getIconUrl;
       L.Icon.Default.mergeOptions({
         iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
@@ -93,116 +243,306 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
         shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
       });
 
-      if (!mapInstanceRef.current && mapContainerRef.current) {
-        const centerLat = coordinates[0]?.[1] || 47.0105;
-        const centerLng = coordinates[0]?.[0] || 28.8350;
+      const centerLat = coordinates[0]?.[1] || 47.0105;
+      const centerLng = coordinates[0]?.[0] || 28.8350;
 
-        const map = L.map(mapContainerRef.current, {
-          center: [centerLat, centerLng],
-          zoom: 14,
-          zoomControl: true,
-        });
+      const map = L.map(containerRef.current, {
+        center: [centerLat, centerLng],
+        zoom: 14,
+        zoomControl: true,
+      });
 
-        // Layer Satelit ESRI
-        const satelliteLayer = L.tileLayer(
-          "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-          {
-            maxZoom: 18,
-            attribution: "Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community",
-          }
-        ).addTo(map);
+      // Creare Pane-uri ierarhice
+      map.createPane("soilPane");
+      (map.getPane("soilPane") as HTMLElement).style.zIndex = "350";
+      (map.getPane("soilPane") as HTMLElement).style.pointerEvents = "none";
 
-        // Layer Cartografic OpenStreetMap
-        const streetsLayer = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      map.createPane("cadastrePane");
+      (map.getPane("cadastrePane") as HTMLElement).style.zIndex = "450";
+      (map.getPane("cadastrePane") as HTMLElement).style.pointerEvents = "none";
+
+      map.createPane("activeParcelPane");
+      (map.getPane("activeParcelPane") as HTMLElement).style.zIndex = "500";
+
+      // 1. Layer Satelit ESRI World Imagery
+      const satelliteLayer = L.tileLayer(
+        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+        {
           maxZoom: 19,
-          attribution: "&copy; OpenStreetMap contributors",
-        });
+          attribution: "&copy; Esri World Imagery",
+        }
+      ).addTo(map);
 
-        (map as any)._layersMap = {
-          satellite: satelliteLayer,
-          streets: streetsLayer,
-        };
+      // 2. Layer Cartografic OpenStreetMap
+      const streetsLayer = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: "&copy; OpenStreetMap contributors",
+      });
 
-        const polygon = L.polygon([], {
-          color: "#22c55e",
-          weight: 3,
-          fillColor: "#4ade80",
-          fillOpacity: 0.35,
-        }).addTo(map);
+      tileLayersRef.current = {
+        satellite: satelliteLayer,
+        streets: streetsLayer,
+      };
 
-        const markersGroup = L.layerGroup().addTo(map);
+      // 3. Strat Harta Solurilor Moldovei (soluri.gov.md / geodata.gov.md)
+      const soilWms = (L.tileLayer as any).wms(
+        "https://geodata.gov.md/geoserver/wms",
+        {
+          layers: "atlase:Moldova_Region_Pedogeog_reproiectat",
+          format: "image/png",
+          transparent: true,
+          version: "1.1.1",
+          maxZoom: 18,
+          opacity: 0.65,
+          pane: "soilPane",
+          attribution: "&copy; soluri.gov.md — Institutul „Nicolae Dimo”",
+        }
+      );
 
-        mapInstanceRef.current = map;
-        polygonLayerRef.current = polygon;
-        markersGroupRef.current = markersGroup;
+      if (showSoils) {
+        soilWms.addTo(map);
       }
+      soilLayerRef.current = soilWms;
 
-      updatePolygonDisplay(L, currentCoords);
+      // 4. Strat Cadastral Oficial WMS
+      const cadastreWms = (L.tileLayer as any).wms(
+        "https://geodata.gov.md/geoserver/cadastru_data/wms",
+        {
+          layers: "cadastru_data:sector_cadastral",
+          format: "image/png",
+          transparent: true,
+          version: "1.1.1",
+          maxZoom: 20,
+          minZoom: 11,
+          opacity: 0.8,
+          pane: "cadastrePane",
+          attribution: "&copy; geodata.gov.md — Cadastru",
+        }
+      );
+      cadastreLayerRef.current = cadastreWms;
+
+      // 5. Poligon activ selectat
+      const polygon = L.polygon([], {
+        color: "#22c55e",
+        weight: 3.5,
+        fillColor: "#4ade80",
+        fillOpacity: 0.35,
+        pane: "activeParcelPane",
+      }).addTo(map);
+
+      const markersGroup = L.layerGroup([], { pane: "activeParcelPane" } as any).addTo(map);
+      const drawLayer = L.layerGroup([], { pane: "activeParcelPane" } as any).addTo(map);
+
+      polygonRef.current = polygon;
+      markersGroupRef.current = markersGroup;
+      drawLayerRef.current = drawLayer;
+      mapRef.current = map;
+
+      // Randare poligon inițial
+      renderPolygon(L, coordinates, true);
+
+      // Event listener pentru click pe hartă
+      map.on("click", (e: any) => {
+        if (isDrawingRef.current) {
+          const lat = Number(e.latlng.lat.toFixed(5));
+          const lng = Number(e.latlng.lng.toFixed(5));
+          const updated = [...drawPointsRef.current, [lng, lat]];
+          setDrawPoints(updated);
+
+          const dot = L.circleMarker([lat, lng], {
+            radius: 5,
+            color: "#eab308",
+            fillColor: "#fde047",
+            fillOpacity: 1,
+            weight: 2,
+          });
+          drawLayerRef.current.addLayer(dot);
+
+          if (updated.length >= 2) {
+            const polylinePoints = updated.map((pt) => [pt[1], pt[0]]);
+            drawLayerRef.current.eachLayer((layer: any) => {
+              if (layer instanceof L.Polyline && !(layer instanceof L.Polygon)) {
+                drawLayerRef.current.removeLayer(layer);
+              }
+            });
+            L.polyline(polylinePoints as any, {
+              color: "#eab308",
+              dashArray: "6, 6",
+              weight: 2.5,
+            }).addTo(drawLayerRef.current);
+          }
+        } else {
+          handleMapClick(e.latlng.lat, e.latlng.lng);
+        }
+      });
     });
 
     return () => {
       isMounted = false;
-      if (mapInstanceRef.current) {
-        mapInstanceRef.current.remove();
-        mapInstanceRef.current = null;
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
       }
     };
   }, []);
 
-  // Actualizare poligon pe hartă
-  const updatePolygonDisplay = (L: any, coords: number[][]) => {
-    if (!mapInstanceRef.current || !polygonLayerRef.current) return;
-
-    const latLngs = coords.map((pt) => [pt[1], pt[0]]);
-    polygonLayerRef.current.setLatLngs(latLngs);
-
-    if (markersGroupRef.current) {
-      markersGroupRef.current.clearLayers();
-      latLngs.forEach((latLng, idx) => {
-        const marker = L.circleMarker(latLng, {
-          radius: 6,
-          fillColor: "#ffffff",
-          color: "#15803d",
-          weight: 2,
-          fillOpacity: 1,
-        });
-        markersGroupRef.current.addLayer(marker);
-      });
+  // Sincronizare coordonate din afară
+  useEffect(() => {
+    if (coordinates && coordinates.length >= 3) {
+      setCurrentCoords(coordinates);
+      setCalculatedArea(areaHa || calculatePolygonAreaHa(coordinates));
+      if (leafletRef.current && polygonRef.current) {
+        renderPolygon(leafletRef.current, coordinates, false);
+      }
     }
+  }, [coordinates, areaHa, renderPolygon]);
 
-    if (latLngs.length > 0) {
-      mapInstanceRef.current.fitBounds(polygonLayerRef.current.getBounds(), {
-        padding: [30, 30],
-        maxZoom: 15,
-      });
-    }
-  };
-
-  const handleSelectPreset = (preset: typeof PRESET_PARCELS[0]) => {
-    setInputCode(preset.code);
-    setCurrentCoords(preset.coords);
-    onPolygonChange(preset.coords);
-
-    if (typeof window !== "undefined") {
-      import("leaflet").then((L) => {
-        updatePolygonDisplay(L, preset.coords);
-      });
-    }
-  };
-
+  // Schimbare strat de bază
   const toggleLayer = (layer: "satellite" | "streets") => {
-    if (!mapInstanceRef.current || !(mapInstanceRef.current as any)._layersMap) return;
-    const map = mapInstanceRef.current;
-    const layers = (map as any)._layersMap;
+    const map = mapRef.current;
+    if (!map || !tileLayersRef.current) return;
 
-    if (layer === "satellite") {
-      map.removeLayer(layers.streets);
-      map.addLayer(layers.satellite);
-    } else {
-      map.removeLayer(layers.satellite);
-      map.addLayer(layers.streets);
+    if (activeLayer === layer) return;
+
+    if (tileLayersRef.current[activeLayer]) {
+      map.removeLayer(tileLayersRef.current[activeLayer]);
+    }
+    if (tileLayersRef.current[layer]) {
+      tileLayersRef.current[layer].addTo(map);
     }
     setActiveLayer(layer);
+  };
+
+  // Toggle strat soluri WMS
+  const toggleSoilWms = () => {
+    const map = mapRef.current;
+    const soilLayer = soilLayerRef.current;
+    if (!map || !soilLayer) return;
+
+    if (showSoils) {
+      map.removeLayer(soilLayer);
+      setShowSoils(false);
+    } else {
+      soilLayer.addTo(map);
+      setShowSoils(true);
+    }
+  };
+
+  // Selectare preset
+  const handleSelectPreset = (parcel: PreloadedParcel) => {
+    const L = leafletRef.current;
+    setInputCode(parcel.cadastral_code);
+    setCurrentCoords(parcel.coordinates);
+    setCalculatedArea(parcel.area_ha);
+    onPolygonChange(parcel.coordinates);
+    if (L) {
+      renderPolygon(L, parcel.coordinates, true);
+    }
+    onAnalyze(parcel.cadastral_code, parcel.coordinates);
+    setStatusMessage({
+      type: "success",
+      text: `Selectat: ${parcel.name} • ${parcel.area_ha} ha (${parcel.region})`,
+    });
+  };
+
+  // Căutare după număr cadastral
+  const handleSearchCode = async (codeToSearch: string) => {
+    const cleanCode = codeToSearch.trim();
+    if (!cleanCode) return;
+
+    setIsSearching(true);
+    setStatusMessage(null);
+
+    // 1. Verificare locală
+    const localMatch = PRELOADED_PARCELS.find(
+      (p) => p.cadastral_code.replace(/\s+/g, "") === cleanCode.replace(/\s+/g, "")
+    );
+
+    if (localMatch) {
+      setIsSearching(false);
+      handleSelectPreset(localMatch);
+      return;
+    }
+
+    // 2. Apel API proxy cadastru
+    try {
+      const res = await fetch(`/api/cadastre?code=${encodeURIComponent(cleanCode)}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.coordinates && data.coordinates.length >= 3) {
+          setInputCode(data.cadastral_code);
+          setCurrentCoords(data.coordinates);
+          setCalculatedArea(data.area_ha);
+          onPolygonChange(data.coordinates);
+          if (leafletRef.current) {
+            renderPolygon(leafletRef.current, data.coordinates, true);
+          }
+          onAnalyze(data.cadastral_code, data.coordinates);
+          setStatusMessage({
+            type: "success",
+            text: `Număr cadastral ${cleanCode} găsit (${data.area_ha} ha).`,
+          });
+          return;
+        }
+      }
+      setStatusMessage({
+        type: "warning",
+        text: `Codul ${cleanCode} nu a fost găsit în serverul Cadastru. Încercați o mostră din listă.`,
+      });
+    } catch {
+      setStatusMessage({
+        type: "error",
+        text: `Eroare de conectare la serviciul cadastral pentru codul ${cleanCode}.`,
+      });
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // Mod desenare manuală
+  const startDrawing = () => {
+    setIsDrawing(true);
+    setDrawPoints([]);
+    if (drawLayerRef.current) drawLayerRef.current.clearLayers();
+    setStatusMessage({
+      type: "warning",
+      text: "Mod Desenare Activ: Faceți clic pe hartă pentru a plasa nodurile parcelei.",
+    });
+  };
+
+  const finishDrawing = () => {
+    if (drawPoints.length < 3) {
+      setStatusMessage({
+        type: "error",
+        text: "Sunt necesare cel puțin 3 puncte pentru a închide un contur.",
+      });
+      return;
+    }
+    const L = leafletRef.current;
+    const closed = [...drawPoints, drawPoints[0]];
+    const newArea = calculatePolygonAreaHa(closed);
+
+    setCurrentCoords(closed);
+    setCalculatedArea(newArea);
+    onPolygonChange(closed);
+    if (L) {
+      renderPolygon(L, closed, true);
+    }
+    if (drawLayerRef.current) drawLayerRef.current.clearLayers();
+    setIsDrawing(false);
+    setDrawPoints([]);
+    onAnalyze(inputCode, closed);
+    setStatusMessage({
+      type: "success",
+      text: `Contur salvat: ${newArea.toFixed(2)} ha (${closed.length - 1} puncte).`,
+    });
+  };
+
+  const cancelDrawing = () => {
+    setIsDrawing(false);
+    setDrawPoints([]);
+    if (drawLayerRef.current) drawLayerRef.current.clearLayers();
+    setStatusMessage(null);
   };
 
   return (
@@ -210,26 +550,26 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
       {/* Top Map Toolbar */}
       <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-white px-4 py-3 sm:px-5">
         {/* Preset Selector */}
-        <div className="flex min-w-0 items-center gap-2 overflow-x-auto pb-0.5">
+        <div className="flex min-w-0 items-center gap-2 overflow-x-auto pb-0.5 scrollbar-thin">
           <span className="shrink-0 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
             Modele:
           </span>
-          {PRESET_PARCELS.map((p) => (
+          {PRELOADED_PARCELS.map((p) => (
             <button
-              key={p.code}
+              key={p.cadastral_code}
               onClick={() => handleSelectPreset(p)}
               className="shrink-0 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[11px] font-semibold text-slate-600 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-800"
             >
-              {p.name}
+              {p.name.split(" ")[0]} ({p.area_ha} ha)
             </button>
           ))}
         </div>
 
-        {/* Layer Toggle */}
+        {/* Layer Toggles & Tools */}
         <div className="hidden shrink-0 items-center gap-1 rounded-xl bg-slate-100 p-1 text-[11px] font-bold sm:flex">
           <button
             onClick={() => toggleLayer("satellite")}
-              className={`rounded-lg px-2.5 py-1.5 transition-all ${
+            className={`rounded-lg px-2.5 py-1.5 transition-all ${
               activeLayer === "satellite"
                 ? "bg-white text-slate-900 shadow-xs"
                 : "text-slate-600 hover:text-slate-900"
@@ -239,18 +579,30 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
           </button>
           <button
             onClick={() => toggleLayer("streets")}
-              className={`rounded-lg px-2.5 py-1.5 transition-all ${
+            className={`rounded-lg px-2.5 py-1.5 transition-all ${
               activeLayer === "streets"
                 ? "bg-white text-slate-900 shadow-xs"
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
-            Hartă
+            Străzi
+          </button>
+          <button
+            onClick={toggleSoilWms}
+            title="Activează/Dezactivează straturile oficiale de sol soluri.gov.md"
+            className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 transition-all ${
+              showSoils
+                ? "bg-emerald-600 text-white shadow-xs"
+                : "text-slate-600 hover:text-slate-900"
+            }`}
+          >
+            <Layers className="w-3.5 h-3.5" />
+            <span>Soluri WMS</span>
           </button>
         </div>
       </div>
 
-      {/* Cadastral Search & Analyze Action Bar */}
+      {/* Cadastral Search & Action Bar (Floating pill) */}
       <div className="absolute left-4 right-4 top-16 z-20 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-white/80 bg-white/95 p-1.5 shadow-xl shadow-slate-900/10 backdrop-blur">
         <div className="flex min-w-[220px] max-w-xl flex-1 items-center gap-2">
           <div className="relative w-full">
@@ -259,43 +611,118 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
               type="text"
               value={inputCode}
               onChange={(e) => setInputCode(e.target.value)}
-              placeholder="Număr cadastral (ex: 0100123456)..."
+              onKeyDown={(e) => e.key === "Enter" && handleSearchCode(inputCode)}
+              placeholder="Număr cadastral (ex: 0100123456 sau Taraclia 94162160609)..."
               className="w-full rounded-xl border-0 bg-transparent py-2 pl-9 pr-3 text-sm font-medium text-slate-800 outline-none ring-0 placeholder:text-slate-400 focus:border-0 focus:outline-none focus:ring-0"
             />
           </div>
+          <button
+            onClick={() => handleSearchCode(inputCode)}
+            disabled={isSearching}
+            className="shrink-0 rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-200"
+          >
+            {isSearching ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Caută"}
+          </button>
         </div>
 
         <div className="flex items-center gap-3">
           <div className="text-right">
-            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Suprafață</div>
-            <div className="text-sm font-extrabold text-slate-900">{areaHa.toFixed(2)} ha</div>
+            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              Suprafață
+            </div>
+            <div className="text-sm font-extrabold text-slate-900">
+              {calculatedArea.toFixed(2)} ha
+            </div>
           </div>
 
-          <button
-            onClick={() => onAnalyze(inputCode)}
-            disabled={isAnalyzing}
-            className="flex items-center gap-2 rounded-xl bg-agri-600 px-3 py-2 text-xs font-bold text-white shadow-md shadow-emerald-700/20 transition-all hover:bg-agri-700 disabled:opacity-50 sm:px-4 sm:text-sm"
-          >
-            <Sparkles className={`w-4 h-4 ${isAnalyzing ? "animate-spin" : ""}`} />
-            <span className="hidden sm:inline">{isAnalyzing ? "Se analizează..." : "Analizează parcela"}</span>
-            <span className="sm:hidden">Analizează</span>
-          </button>
+          {!isDrawing ? (
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={startDrawing}
+                title="Desenează liber un poligon pe hartă"
+                className="hidden rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50 sm:flex sm:items-center sm:gap-1.5"
+              >
+                <Edit3 className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Desenează</span>
+              </button>
+              <button
+                onClick={() => onAnalyze(inputCode, currentCoords)}
+                disabled={isAnalyzing}
+                className="flex items-center gap-2 rounded-xl bg-agri-600 px-3 py-2 text-xs font-bold text-white shadow-md shadow-emerald-700/20 transition-all hover:bg-agri-700 disabled:opacity-50 sm:px-4 sm:text-sm"
+              >
+                <Sparkles className={`w-4 h-4 ${isAnalyzing ? "animate-spin" : ""}`} />
+                <span className="hidden sm:inline">
+                  {isAnalyzing ? "Se analizează..." : "Analizează parcela"}
+                </span>
+                <span className="sm:hidden">Analizează</span>
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={finishDrawing}
+                className="flex items-center gap-1 rounded-xl bg-emerald-600 px-3 py-2 text-xs font-bold text-white shadow-sm hover:bg-emerald-700"
+              >
+                <Check className="w-3.5 h-3.5" />
+                <span>Finalizează ({drawPoints.length})</span>
+              </button>
+              <button
+                onClick={cancelDrawing}
+                className="flex items-center gap-1 rounded-xl bg-slate-200 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-300"
+              >
+                <X className="w-3.5 h-3.5" />
+                <span>Anulează</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
+      {/* Status banner */}
+      {statusMessage && (
+        <div
+          className={`absolute left-4 right-4 top-32 z-20 flex items-center justify-between rounded-xl px-3.5 py-2 text-xs font-semibold shadow-md backdrop-blur ${
+            statusMessage.type === "success"
+              ? "border border-emerald-300/80 bg-emerald-50/95 text-emerald-900"
+              : statusMessage.type === "warning"
+              ? "border border-amber-300/80 bg-amber-50/95 text-amber-900"
+              : "border border-rose-300/80 bg-rose-50/95 text-rose-900"
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            {statusMessage.type === "success" && <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />}
+            {statusMessage.type === "warning" && <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />}
+            {statusMessage.type === "error" && <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />}
+            <span>{statusMessage.text}</span>
+          </div>
+          <button
+            onClick={() => setStatusMessage(null)}
+            className="text-slate-400 hover:text-slate-600 text-xs ml-2"
+          >
+            &times;
+          </button>
+        </div>
+      )}
+
       {/* Leaflet Map Canvas */}
       <div className="relative h-[430px] w-full bg-slate-100 sm:h-[540px]">
-        <div ref={mapContainerRef} className="w-full h-full z-10" />
+        <div ref={containerRef} className="w-full h-full z-10" />
 
-        {/* Floating Map Overlay Info */}
+        {/* Floating Map Overlay Info (Bottom Left) */}
         <div className="absolute bottom-4 left-4 z-20 flex items-center gap-2 rounded-xl border border-white/80 bg-white/95 px-3 py-2 text-xs font-medium text-slate-700 shadow-xl shadow-slate-900/10 backdrop-blur">
           <MapPin className="h-4 w-4 shrink-0 text-agri-600" />
-          <span>Poligon activ: <strong>{currentCoords.length} puncte GPS</strong></span>
+          <span>
+            Poligon activ: <strong>{currentCoords.length} puncte GPS</strong>
+            {showSoils && <span className="ml-1.5 text-emerald-700 font-bold">&bull; WMS Soluri ON</span>}
+          </span>
         </div>
 
+        {/* Floating Parcel Card (Bottom Right) */}
         <div className="absolute bottom-4 right-4 z-20 hidden w-64 rounded-2xl border border-white/80 bg-white/95 p-4 shadow-xl shadow-slate-900/15 backdrop-blur md:block">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Parcelă selectată</span>
+            <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">
+              Parcelă selectată
+            </span>
             <span className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_0_4px_rgba(34,197,94,0.14)]" />
           </div>
           <div className="mt-3 flex items-start gap-2">
@@ -305,10 +732,15 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
               <p className="truncate text-xs text-slate-500">#{cadastralCode || inputCode}</p>
             </div>
           </div>
-          <p className="mt-4 text-3xl font-extrabold tracking-tight text-slate-950">{areaHa.toFixed(2)} <span className="text-sm font-bold text-slate-400">ha</span></p>
+          <p className="mt-3 text-3xl font-extrabold tracking-tight text-slate-950">
+            {calculatedArea.toFixed(2)}{" "}
+            <span className="text-sm font-bold text-slate-400">ha</span>
+          </p>
           <div className="mt-3 flex items-center justify-between gap-2 border-t border-slate-100 pt-3 text-xs">
-            <span className="truncate text-slate-500">{soilType || "Profil pedologic"}</span>
-            <span className="shrink-0 rounded-lg bg-emerald-50 px-2 py-1 font-bold text-emerald-700">{soilBonitate}/100</span>
+            <span className="truncate text-slate-500">{soilType}</span>
+            <span className="shrink-0 rounded-lg bg-emerald-50 px-2 py-1 font-bold text-emerald-700">
+              {soilBonitate}/100
+            </span>
           </div>
         </div>
       </div>

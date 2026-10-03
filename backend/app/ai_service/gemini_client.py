@@ -20,14 +20,29 @@ class GeminiAIService:
         self.api_key = settings.GEMINI_API_KEY
         self.model_name = settings.GEMINI_MODEL
         self._client = None
-        
-        if self.api_key:
-            try:
-                from google import genai
-                self._client = genai.Client(api_key=self.api_key)
-                logger.info(f"Gemini Client inițializat cu succes (model: {self.model_name})")
-            except Exception as e:
-                logger.warning(f"Nu s-a putut inițializa clientul google-genai: {e}. Se folosește fallback.")
+        self.get_client()
+
+    def get_client(self):
+        if not self._client:
+            api_key = settings.GEMINI_API_KEY or os.getenv("GEMINI_API_KEY")
+            if not api_key:
+                from dotenv import load_dotenv
+                load_dotenv(".env")
+                load_dotenv("../.env")
+                api_key = os.getenv("GEMINI_API_KEY", "")
+                if api_key:
+                    settings.GEMINI_API_KEY = api_key
+
+            if api_key:
+                try:
+                    from google import genai
+                    self.api_key = api_key
+                    self.model_name = settings.GEMINI_MODEL or os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
+                    self._client = genai.Client(api_key=self.api_key)
+                    logger.info(f"Gemini Client inițializat cu succes (model: {self.model_name})")
+                except Exception as e:
+                    logger.warning(f"Nu s-a putut inițializa clientul google-genai: {e}. Se folosește fallback.")
+        return self._client
 
     def generate_guidance(
         self,
@@ -43,10 +58,11 @@ class GeminiAIService:
         detected_risks = detect_phytosanitary_risks(soil, climate)
         prompt = build_analysis_prompt(soil, climate, crops, area_ha, detected_risks)
 
-        if self._client:
+        client = self.get_client()
+        if client:
             try:
                 # Utilizare Google Gemini SDK cu Structured Output
-                response = self._client.models.generate_content(
+                response = client.models.generate_content(
                     model=self.model_name,
                     contents=prompt,
                     config={
