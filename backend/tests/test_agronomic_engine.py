@@ -84,6 +84,28 @@ def test_financial_engine_profit_calculation(sample_soil, sample_climate):
 def test_calculate_crop_economics_all_crops(sample_soil, sample_climate):
     results = calculate_crop_economics(sample_soil, sample_climate)
     assert len(results) == 6
-    # Rezultatele trebuie sa fie sortate dupa scorul de potrivire si profit
-    for i in range(len(results) - 1):
-        assert results[i].suitability_score >= results[i+1].suitability_score or results[i].net_profit_mdl_ha >= results[i+1].net_profit_mdl_ha
+
+
+def test_calculate_crop_economics_strict_sort_order(sample_soil, sample_climate):
+    # Ordinea trebuie sa respecte STRICT cheia folosita de calculate_crop_economics:
+    # descrescator dupa (suitability_score, net_profit_mdl_ha)
+    results = calculate_crop_economics(sample_soil, sample_climate)
+    keys = [(r.suitability_score, r.net_profit_mdl_ha) for r in results]
+    assert keys == sorted(keys, reverse=True)
+
+
+def test_calculate_crop_economics_selected_crops_by_name(sample_soil, sample_climate):
+    results = calculate_crop_economics(sample_soil, sample_climate, selected_crops=["Soia"])
+    assert len(results) == 1
+    assert results[0].crop_name == "Soia"
+
+
+def test_calculate_crop_economics_selected_crops_by_latin_name(sample_soil, sample_climate):
+    results = calculate_crop_economics(sample_soil, sample_climate, selected_crops=["Glycine max"])
+    assert len(results) == 1
+    assert results[0].crop_name == "Soia"
+
+
+def test_calculate_crop_economics_nonexistent_crop_returns_empty(sample_soil, sample_climate):
+    results = calculate_crop_economics(sample_soil, sample_climate, selected_crops=["Cultura-Inexistenta"])
+    assert results == []
