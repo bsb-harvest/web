@@ -128,7 +128,7 @@ export default function Home() {
             <div>
               <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-700">01 / Localizare</p>
               <h2 className="mt-1 text-2xl font-extrabold tracking-tight text-[#17211B]">Harta parcelei</h2>
-              <p className="mt-1 text-sm text-[#647067]">Caută un cod cadastral sau alege un model din Republica Moldova.</p>
+              <p className="mt-1 text-sm text-[#647067]">Caută un număr cadastral, selectează direct pe hartă sau desenează conturul parcelei.</p>
             </div>
             <button
               onClick={() => handleRunAnalysis()}

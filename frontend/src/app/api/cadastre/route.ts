@@ -296,63 +296,7 @@ export async function GET(request: Request) {
     console.warn("Eroare interogare geodata.gov.md:", err);
   }
 
-  // 3. Fallback pe mostre locale dacă codul corespunde uneia dintre parcelele de test
-  const LOCAL_PRESETS: Record<string, { name: string; coords: number[][]; area_ha: number }> = {
-    "0100123456": {
-      name: "Chișinău Central",
-      coords: [
-        [28.8300, 47.0100],
-        [28.8450, 47.0100],
-        [28.8450, 47.0220],
-        [28.8300, 47.0220],
-      ],
-      area_ha: 15.5,
-    },
-    "0300987654": {
-      name: "Bălți Nord",
-      coords: [
-        [27.9150, 47.7550],
-        [27.9350, 47.7550],
-        [27.9350, 47.7700],
-        [27.9150, 47.7700],
-      ],
-      area_ha: 28.4,
-    },
-    "1700456123": {
-      name: "Cahul Sud",
-      coords: [
-        [28.1800, 45.8950],
-        [28.2000, 45.8950],
-        [28.2000, 45.9120],
-        [28.1800, 45.9120],
-      ],
-      area_ha: 42.0,
-    },
-    "6400789456": {
-      name: "Orhei Codru",
-      coords: [
-        [28.8100, 47.3750],
-        [28.8300, 47.3750],
-        [28.8300, 47.3900],
-        [28.8100, 47.3900],
-      ],
-      area_ha: 18.2,
-    },
-  };
 
-  if (LOCAL_PRESETS[cleanCode]) {
-    const p = LOCAL_PRESETS[cleanCode];
-    return NextResponse.json({
-      success: true,
-      source: "local_registry",
-      parcel: {
-        cadastral_code: cleanCode,
-        area_ha: p.area_ha,
-        landuse: "Teren agricol arabil",
-        coordinates: p.coords,
-      },
-    });
-  }
 
   return NextResponse.json(
     {

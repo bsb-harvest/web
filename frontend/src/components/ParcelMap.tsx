@@ -12,13 +12,7 @@ import {
   Loader2,
   CheckCircle2,
   AlertCircle,
-  Building2,
 } from "lucide-react";
-import {
-  PRELOADED_PARCELS,
-  findPreloadedParcel,
-  PreloadedParcel,
-} from "@/mock/preloadedParcels";
 
 interface ParcelMapProps {
   coordinates: number[][]; // [[lng, lat], ...]
@@ -65,8 +59,6 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
   const markersGroupRef = useRef<any>(null);
   const drawLayerRef = useRef<any>(null);
   const soilLayerRef = useRef<any>(null);
-  const cadastreWmsRef = useRef<any>(null);
-  const preloadedGroupRef = useRef<any>(null);
   const tileLayersRef = useRef<{ [key: string]: any }>({});
   const leafletRef = useRef<any>(null);
 
@@ -74,10 +66,9 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
   const [calculatedArea, setCalculatedArea] = useState<number>(
     areaHa || calculatePolygonAreaHa(coordinates)
   );
-  const [inputCode, setInputCode] = useState<string>(cadastralCode || "0300987654");
+  const [inputCode, setInputCode] = useState<string>(cadastralCode || "");
   const [activeLayer, setActiveLayer] = useState<"satellite" | "streets">("satellite");
   const [showSoils, setShowSoils] = useState<boolean>(true);
-  const [showCadastre, setShowCadastre] = useState<boolean>(true);
 
   const [isDrawing, setIsDrawing] = useState<boolean>(false);
   const [drawPoints, setDrawPoints] = useState<number[][]>([]);
@@ -93,7 +84,7 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
   const drawPointsRef = useRef<number[][]>([]);
   drawPointsRef.current = drawPoints;
 
-  // Actualizare poligon pe hartă cu markere de ajustare pe colțuri
+  // Actualizare poligon pe hartă cu noduri de ajustare pe colțuri
   const renderPolygon = useCallback(
     (L: any, coords: number[][], fitBounds: boolean = false) => {
       if (!coords || coords.length < 3 || !polygonRef.current) return;
@@ -170,30 +161,6 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
     [onPolygonChange]
   );
 
-  // Selectare parcelă model / preîncărcată
-  const handleSelectPreset = useCallback(
-    (parcel: PreloadedParcel) => {
-      const L = leafletRef.current;
-      setInputCode(parcel.cadastral_code);
-      setCurrentCoords(parcel.coordinates);
-      setCalculatedArea(parcel.area_ha);
-      onPolygonChange(parcel.coordinates);
-      if (L) {
-        renderPolygon(L, parcel.coordinates, true);
-      }
-      onAnalyze(parcel.cadastral_code, parcel.coordinates);
-      setStatusMessage({
-        type: "success",
-        text: `Parcelă selectată: ${parcel.name} • Cod ${parcel.cadastral_code} (${parcel.area_ha} ha, ${parcel.region})`,
-      });
-    },
-    [onPolygonChange, onAnalyze, renderPolygon]
-  );
-
-  // Păstrăm refs stabile pentru listenerii Leaflet
-  const handleSelectPresetRef = useRef(handleSelectPreset);
-  handleSelectPresetRef.current = handleSelectPreset;
-
   // Click / tap pe hartă pentru identificare parcelă
   const handleMapClick = useCallback(
     async (lat: number, lng: number) => {
@@ -203,14 +170,6 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
       const map = mapRef.current;
       if (!L || !map) return;
 
-      // 1. Verificare instantă în mostrele locale preîncărcate
-      const localMatch = findPreloadedParcel(lat, lng);
-      if (localMatch) {
-        handleSelectPresetRef.current(localMatch);
-        return;
-      }
-
-      // 2. Interogare spațială geodata.gov.md prin proxy cadastru
       setIsSearching(true);
       setStatusMessage({
         type: "warning",
@@ -239,7 +198,7 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
             onAnalyze(parcel.cadastral_code, parcel.coordinates);
             setStatusMessage({
               type: "success",
-              text: `Parcelă identificată (${parcel.landuse || "Cadastru"}): Cod ${parcel.cadastral_code} • ${parcel.area_ha} ha`,
+              text: `Parcelă selectată (${parcel.landuse || "Cadastru"}): Cod ${parcel.cadastral_code} • ${parcel.area_ha} ha`,
             });
             return;
           }
@@ -247,7 +206,7 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
 
         setStatusMessage({
           type: "warning",
-          text: `Nu s-au putut extrage date oficiale la [${lat.toFixed(4)}, ${lng.toFixed(4)}]. Puteți alege o parcelă din lista de sus.`,
+          text: `Nu s-au putut extrage date oficiale la [${lat.toFixed(4)}, ${lng.toFixed(4)}]. Puteți introduce un cod sau desena liber.`,
         });
       } catch (err) {
         console.warn("Eroare la identificarea parcelei:", err);
@@ -265,7 +224,51 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
   const handleMapClickRef = useRef(handleMapClick);
   handleMapClickRef.current = handleMapClick;
 
-  // Inițializare hartă Leaflet cu straturi oficiale
+  // Căutare după număr cadastral
+  const handleSearchCode = async (codeToSearch: string) => {
+    const cleanCode = codeToSearch.trim();
+    if (!cleanCode) return;
+
+    setIsSearching(true);
+    setStatusMessage(null);
+
+    try {
+      const res = await fetch(`/api/cadastre?code=${encodeURIComponent(cleanCode)}`);
+      if (res.ok) {
+        const data = await res.json();
+        const parcel = data?.parcel || data;
+
+        if (data?.success && parcel?.coordinates && parcel.coordinates.length >= 3) {
+          setInputCode(parcel.cadastral_code);
+          setCurrentCoords(parcel.coordinates);
+          setCalculatedArea(parcel.area_ha);
+          onPolygonChange(parcel.coordinates);
+          if (leafletRef.current) {
+            renderPolygon(leafletRef.current, parcel.coordinates, true);
+          }
+          onAnalyze(parcel.cadastral_code, parcel.coordinates);
+          setStatusMessage({
+            type: "success",
+            text: `Număr cadastral ${cleanCode} identificat (${parcel.area_ha} ha).`,
+          });
+          return;
+        }
+      }
+      setStatusMessage({
+        type: "warning",
+        text: `Numărul cadastral ${cleanCode} nu a fost găsit în serverul oficial geodata.gov.md.`,
+      });
+    } catch {
+      setStatusMessage({
+        type: "error",
+        text: `Eroare de conectare la serviciul cadastral pentru codul ${cleanCode}.`,
+      });
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // Inițializare hartă Leaflet
   useEffect(() => {
     if (typeof window === "undefined" || !containerRef.current || mapRef.current) return;
 
@@ -283,7 +286,6 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
         shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
       });
 
-      // Centru inițial pe Bălți (Răuțel / Stepa Bălților)
       const centerLat = coordinates[0]?.[1] || 47.7550;
       const centerLng = coordinates[0]?.[0] || 27.9150;
 
@@ -299,15 +301,8 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
       (map.getPane("soilPane") as HTMLElement).style.zIndex = "350";
       (map.getPane("soilPane") as HTMLElement).style.pointerEvents = "none";
 
-      map.createPane("cadastreWmsPane");
-      (map.getPane("cadastreWmsPane") as HTMLElement).style.zIndex = "380";
-      (map.getPane("cadastreWmsPane") as HTMLElement).style.pointerEvents = "none";
-
-      map.createPane("cadastreParcelsPane");
-      (map.getPane("cadastreParcelsPane") as HTMLElement).style.zIndex = "460";
-
       map.createPane("activeParcelPane");
-      (map.getPane("activeParcelPane") as HTMLElement).style.zIndex = "520";
+      (map.getPane("activeParcelPane") as HTMLElement).style.zIndex = "500";
 
       // 1. Layer Satelit ESRI World Imagery
       const satelliteLayer = L.tileLayer(
@@ -349,62 +344,7 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
       }
       soilLayerRef.current = soilWms;
 
-      // 4. Strat WMS Cadastru Oficial de fond
-      const cadastreWms = (L.tileLayer as any).wms(
-        "https://geodata.gov.md/geoserver/cadastru_data/wms",
-        {
-          layers: "cadastru_data:sector_cadastral",
-          format: "image/png",
-          transparent: true,
-          version: "1.1.1",
-          maxZoom: 20,
-          minZoom: 10,
-          opacity: 0.75,
-          pane: "cadastreWmsPane",
-          attribution: "&copy; geodata.gov.md — Cadastru",
-        }
-      );
-      cadastreWmsRef.current = cadastreWms;
-
-      // 5. Grup Parcele Cadastru Preîncărcate (Interactive & Clickable)
-      const preloadedGroup = L.layerGroup([], { pane: "cadastreParcelsPane" } as any);
-
-      PRELOADED_PARCELS.forEach((p) => {
-        const pLatLngs = p.coordinates.map((pt) => [pt[1], pt[0]]);
-        const poly = L.polygon(pLatLngs as any, {
-          color: "#d97706",
-          weight: 2,
-          dashArray: "5, 5",
-          fillColor: "#f59e0b",
-          fillOpacity: 0.16,
-          pane: "cadastreParcelsPane",
-        });
-
-        poly.bindTooltip(
-          `<div style="font-family: inherit; font-size: 12px; line-height: 1.4;">
-            <strong style="color: #0f172a; font-size: 13px;">${p.name}</strong><br/>
-            <span style="color: #64748b;">Cod cadastral:</span> <span style="font-weight: 700; color: #d97706;">${p.cadastral_code}</span><br/>
-            <span style="color: #64748b;">Suprafață:</span> <strong>${p.area_ha} ha</strong> &bull; <span style="color: #059669; font-weight: 600;">${p.region}</span>
-          </div>`,
-          { sticky: true, opacity: 0.95 }
-        );
-
-        // Tap direct pe parcelă -> selecție instantanee
-        poly.on("click", (e: any) => {
-          L.DomEvent.stopPropagation(e);
-          handleSelectPresetRef.current(p);
-        });
-
-        preloadedGroup.addLayer(poly);
-      });
-
-      if (showCadastre) {
-        preloadedGroup.addTo(map);
-        cadastreWms.addTo(map);
-      }
-      preloadedGroupRef.current = preloadedGroup;
-
-      // 6. Poligon activ selectat (verde)
+      // 4. Poligon activ selectat (verde)
       const polygon = L.polygon([], {
         color: "#16a34a",
         weight: 3.5,
@@ -413,7 +353,7 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
         pane: "activeParcelPane",
       }).addTo(map);
 
-      // Tap pe poligonul activ -> declanșează re-identificarea / selecția
+      // Tap pe poligonul activ -> re-identificare
       polygon.on("click", (e: any) => {
         L.DomEvent.stopPropagation(e);
         if (!isDrawingRef.current) {
@@ -467,7 +407,7 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
         }
       });
 
-      // Asigurăm redimensionarea corectă a tile-urilor Leaflet
+      // Asigurăm redimensionarea corectă a containerului Leaflet
       setTimeout(() => map.invalidateSize(), 150);
       setTimeout(() => map.invalidateSize(), 400);
     });
@@ -536,80 +476,6 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
     }
   };
 
-  // Toggle strat parcele cadastrale
-  const toggleCadastreLayer = () => {
-    const map = mapRef.current;
-    const preloaded = preloadedGroupRef.current;
-    const wms = cadastreWmsRef.current;
-    if (!map) return;
-
-    if (showCadastre) {
-      if (preloaded) map.removeLayer(preloaded);
-      if (wms) map.removeLayer(wms);
-      setShowCadastre(false);
-    } else {
-      if (preloaded) preloaded.addTo(map);
-      if (wms) wms.addTo(map);
-      setShowCadastre(true);
-    }
-  };
-
-  // Căutare după număr cadastral
-  const handleSearchCode = async (codeToSearch: string) => {
-    const cleanCode = codeToSearch.trim();
-    if (!cleanCode) return;
-
-    setIsSearching(true);
-    setStatusMessage(null);
-
-    // 1. Verificare locală
-    const localMatch = PRELOADED_PARCELS.find(
-      (p) => p.cadastral_code.replace(/\s+/g, "") === cleanCode.replace(/\s+/g, "")
-    );
-
-    if (localMatch) {
-      setIsSearching(false);
-      handleSelectPreset(localMatch);
-      return;
-    }
-
-    // 2. Apel API proxy cadastru
-    try {
-      const res = await fetch(`/api/cadastre?code=${encodeURIComponent(cleanCode)}`);
-      if (res.ok) {
-        const data = await res.json();
-        const parcel = data?.parcel || data;
-
-        if (data?.success && parcel?.coordinates && parcel.coordinates.length >= 3) {
-          setInputCode(parcel.cadastral_code);
-          setCurrentCoords(parcel.coordinates);
-          setCalculatedArea(parcel.area_ha);
-          onPolygonChange(parcel.coordinates);
-          if (leafletRef.current) {
-            renderPolygon(leafletRef.current, parcel.coordinates, true);
-          }
-          onAnalyze(parcel.cadastral_code, parcel.coordinates);
-          setStatusMessage({
-            type: "success",
-            text: `Număr cadastral ${cleanCode} găsit (${parcel.area_ha} ha).`,
-          });
-          return;
-        }
-      }
-      setStatusMessage({
-        type: "warning",
-        text: `Codul ${cleanCode} nu a fost găsit în serverul Cadastru. Încercați o parcelă din lista de mai sus.`,
-      });
-    } catch {
-      setStatusMessage({
-        type: "error",
-        text: `Eroare de conectare la serviciul cadastral pentru codul ${cleanCode}.`,
-      });
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
   // Mod desenare manuală
   const startDrawing = () => {
     setIsDrawing(true);
@@ -660,31 +526,18 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
     <div className="relative overflow-hidden rounded-[28px] border border-slate-200/80 bg-white shadow-[0_18px_50px_-30px_rgba(15,23,42,0.55)]">
       {/* Top Map Toolbar */}
       <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-white px-4 py-3 sm:px-5">
-        {/* Preset Selector */}
-        <div className="flex min-w-0 items-center gap-2 overflow-x-auto pb-0.5 scrollbar-thin">
-          <span className="shrink-0 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
-            Parcele model:
+        <div className="flex items-center gap-2">
+          <span className="flex h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_0_3px_rgba(34,197,94,0.18)]" />
+          <span className="text-xs font-bold text-slate-800">
+            Harta Cadastrală Interactivă
           </span>
-          {PRELOADED_PARCELS.map((p) => {
-            const isSelected = (cadastralCode || inputCode) === p.cadastral_code;
-            return (
-              <button
-                key={p.cadastral_code}
-                onClick={() => handleSelectPreset(p)}
-                className={`shrink-0 rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold transition ${
-                  isSelected
-                    ? "border-emerald-500 bg-emerald-50 text-emerald-800 shadow-2xs"
-                    : "border-slate-200 bg-slate-50 text-slate-600 hover:border-emerald-300 hover:bg-emerald-50/60 hover:text-emerald-800"
-                }`}
-              >
-                {p.name.split(" ")[0]} ({p.area_ha} ha)
-              </button>
-            );
-          })}
+          <span className="hidden text-[11px] text-slate-400 sm:inline">
+            • Atingeți sau faceți clic oriunde pe hartă pentru a selecta o parcelă
+          </span>
         </div>
 
-        {/* Layer Toggles & Tools */}
-        <div className="hidden shrink-0 items-center gap-1 rounded-xl bg-slate-100 p-1 text-[11px] font-bold sm:flex">
+        {/* Layer Toggles */}
+        <div className="flex shrink-0 items-center gap-1 rounded-xl bg-slate-100 p-1 text-[11px] font-bold">
           <button
             onClick={() => toggleLayer("satellite")}
             className={`rounded-lg px-2.5 py-1.5 transition-all ${
@@ -717,18 +570,6 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
             <Layers className="w-3.5 h-3.5" />
             <span>Soluri WMS</span>
           </button>
-          <button
-            onClick={toggleCadastreLayer}
-            title="Afișează/Ascunde contururile cadastrale pe hartă"
-            className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 transition-all ${
-              showCadastre
-                ? "bg-amber-600 text-white shadow-xs"
-                : "text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            <Building2 className="w-3.5 h-3.5" />
-            <span>Cadastru</span>
-          </button>
         </div>
       </div>
 
@@ -742,7 +583,7 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
               value={inputCode}
               onChange={(e) => setInputCode(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSearchCode(inputCode)}
-              placeholder="Număr cadastral (ex: 0300987654 sau Taraclia 94162160609)..."
+              placeholder="Introduceți numărul cadastral (ex: 0300987654)..."
               className="w-full rounded-xl border-0 bg-transparent py-2 pl-9 pr-3 text-sm font-medium text-slate-800 outline-none ring-0 placeholder:text-slate-400 focus:border-0 focus:outline-none focus:ring-0"
             />
           </div>
@@ -843,7 +684,6 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
           <MapPin className="h-4 w-4 shrink-0 text-agri-600" />
           <span>
             Poligon activ: <strong>{currentCoords.length} noduri GPS</strong>
-            {showCadastre && <span className="ml-1.5 text-amber-700 font-bold">&bull; Cadastru ON (Tap pe parcele)</span>}
             {showSoils && <span className="ml-1.5 text-emerald-700 font-bold">&bull; Soluri WMS ON</span>}
           </span>
         </div>
@@ -860,7 +700,7 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
             <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
             <div className="min-w-0">
               <p className="font-bold text-slate-900">Parcela activă</p>
-              <p className="truncate text-xs font-mono font-semibold text-slate-500">#{cadastralCode || inputCode}</p>
+              <p className="truncate text-xs font-mono font-semibold text-slate-500">#{cadastralCode || inputCode || "Nedefinit"}</p>
             </div>
           </div>
           <p className="mt-3 text-3xl font-extrabold tracking-tight text-slate-950">
