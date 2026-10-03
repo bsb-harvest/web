@@ -1,0 +1,62 @@
+{
+  "parcel_id": "parc-001",
+  "cadastral_code": "0100123456",
+  "area_ha": 15.5,
+  "coordinates": [
+    [28.83, 47.01],
+    [28.84, 47.01],
+    [28.84, 47.02],
+    [28.83, 47.02]
+  ],
+  "soil_profile": {
+    "type": "Cernoziom tipic moderat humifer",
+    "bonitate_points": 76,
+    "humus_pct": 3.8,
+    "ph": 7.2,
+    "erosion_grade": "slab"
+  },
+  "climate_telemetry": {
+    "nearest_station_id": "agro-st-chisinau-01",
+    "distance_km": 4.2,
+    "soil_moisture_pct": 42.0,
+    "leaf_wetness_hours": 3.5,
+    "precipitation_last_30d_mm": 28.0,
+    "eto_evapotranspiration_mm": 4.5
+  },
+  "recommended_crops": [
+    {
+      "crop_name": "Floarea-soarelui",
+      "suitability_score": 92,
+      "estimated_yield": {
+        "min_t_ha": 2.4,
+        "max_t_ha": 3.2
+      },
+      "estimated_costs_mdl_ha": 11500.0,
+      "estimated_revenue_mdl_ha": 22400.0,
+      "net_profit_mdl_ha": 10900.0
+    },
+    {
+      "crop_name": "Grau de toamna",
+      "suitability_score": 88,
+      "estimated_yield": {
+        "min_t_ha": 4.2,
+        "max_t_ha": 5.4
+      },
+      "estimated_costs_mdl_ha": 12000.0,
+      "estimated_revenue_mdl_ha": 19000.0,
+      "net_profit_mdl_ha": 7000.0
+    }
+  ],
+  "ai_guidance": {
+    "summary": "Solul are un potențial ridicat de bonitate (76p), însă rezerva de apă din profilul 0-50 cm este limitativă. Cultura de Floarea-soarelui prezintă cea mai bună reziliență.",
+    "risks": [
+      "Deficit hidric în faza de înflorire",
+      "Risc scăzut de fuzarioză datorită umidității reduse pe frunză"
+    ],
+    "actionable_steps": [
+      "Semănat timpuriu pentru valorificarea umidității de iarnă",
+      "Aplicare îngrășăminte cu fosfor la patul germinativ",
+      "Monitorizarea precipitațiilor în luna mai"
+    ]
+  }
+}

@@ -1,0 +1,138 @@
+{
+  "type": "FeatureCollection",
+  "name": "moldova_soils",
+  "crs": {
+    "type": "name",
+    "properties": {
+      "name": "urn:ogc:def:crs:OGC:1.3:CRS84"
+    }
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "id": "soil-nord-01",
+      "properties": {
+        "soil_type": "Cernoziom levigat Bălți/Nord",
+        "bonitate_points": 84,
+        "humus_pct": 4.2,
+        "ph": 6.8,
+        "erosion_grade": "slab"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [26.80, 47.55],
+            [28.80, 47.55],
+            [28.80, 48.50],
+            [26.80, 48.50],
+            [26.80, 47.55]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "soil-codru-01",
+      "properties": {
+        "soil_type": "Soluri cenușii Codru/Orhei",
+        "bonitate_points": 62,
+        "humus_pct": 2.9,
+        "ph": 6.2,
+        "erosion_grade": "moderat"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [28.15, 47.15],
+            [28.95, 47.15],
+            [28.95, 47.52],
+            [28.15, 47.52],
+            [28.15, 47.15]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "soil-centru-01",
+      "properties": {
+        "soil_type": "Cernoziom tipic Chișinău/Centru",
+        "bonitate_points": 76,
+        "humus_pct": 3.8,
+        "ph": 7.2,
+        "erosion_grade": "slab"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [28.45, 46.75],
+            [29.40, 46.75],
+            [29.40, 47.14],
+            [28.45, 47.14],
+            [28.45, 46.75]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "soil-sud-01",
+      "properties": {
+        "soil_type": "Cernoziom carbonatic Cahul/Sud",
+        "bonitate_points": 68,
+        "humus_pct": 3.1,
+        "ph": 7.8,
+        "erosion_grade": "moderat"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [28.05, 45.50],
+            [28.95, 45.50],
+            [28.95, 46.60],
+            [28.05, 46.60],
+            [28.05, 45.50]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "soil-lunca-01",
+      "properties": {
+        "soil_type": "Soluri aluviale de luncă Prut/Nistru",
+        "bonitate_points": 70,
+        "humus_pct": 3.2,
+        "ph": 7.4,
+        "erosion_grade": "lipsa"
+      },
+      "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [
+          [
+            [
+              [29.45, 46.40],
+              [30.15, 46.40],
+              [30.15, 46.90],
+              [29.45, 46.90],
+              [29.45, 46.40]
+            ]
+          ],
+          [
+            [
+              [27.60, 47.15],
+              [28.00, 47.15],
+              [28.00, 47.45],
+              [27.60, 47.45],
+              [27.60, 47.15]
+            ]
+          ]
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,356 @@
+<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+<head>
+<meta charset="utf-8">
+<title>Plan de Lucru Paralel - AgriTech AI Guidance Moldova</title>
+<!--[if gte mso 9]>
+<xml>
+<w:WordDocument>
+<w:View>Print</w:View>
+<w:Zoom>100</w:Zoom>
+<w:DoNotOptimizeForBrowser/>
+</w:WordDocument>
+</xml>
+<![endif]-->
+<style>
+  @page {
+    size: A4;
+    margin: 2cm 2cm 2cm 2cm;
+    mso-header-margin: 1cm;
+    mso-footer-margin: 1cm;
+  }
+  body {
+    font-family: 'Segoe UI', Calibri, Arial, sans-serif;
+    font-size: 11pt;
+    line-height: 1.5;
+    color: #1e293b;
+    background-color: #ffffff;
+  }
+  h1 {
+    font-size: 22pt;
+    color: #1b5e20;
+    border-bottom: 2pt solid #2e7d32;
+    padding-bottom: 6px;
+    margin-top: 18pt;
+    margin-bottom: 12pt;
+  }
+  h2 {
+    font-size: 15pt;
+    color: #2e7d32;
+    border-bottom: 1pt solid #c8e6c9;
+    padding-bottom: 4px;
+    margin-top: 16pt;
+    margin-bottom: 8pt;
+  }
+  h3 {
+    font-size: 12pt;
+    color: #0f172a;
+    margin-top: 12pt;
+    margin-bottom: 4pt;
+  }
+  p {
+    margin-top: 0;
+    margin-bottom: 8pt;
+  }
+  ul, ol {
+    margin-top: 0;
+    margin-bottom: 8pt;
+    padding-left: 20pt;
+  }
+  li {
+    margin-bottom: 4pt;
+  }
+  .header-box {
+    background-color: #f1f8e9;
+    border: 1pt solid #c5e1a5;
+    border-left: 5pt solid #2e7d32;
+    padding: 12pt;
+    margin-bottom: 16pt;
+  }
+  .person-box {
+    background-color: #f8fafc;
+    border: 1pt solid #cbd5e1;
+    border-left: 4pt solid #0284c7;
+    padding: 10pt;
+    margin-top: 12pt;
+    margin-bottom: 12pt;
+  }
+  .person-title {
+    font-size: 13pt;
+    font-weight: bold;
+    color: #0369a1;
+    margin-bottom: 4pt;
+  }
+  .tech-stack {
+    font-size: 9.5pt;
+    color: #475569;
+    margin-bottom: 8pt;
+    font-style: italic;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin-top: 8pt;
+    margin-bottom: 12pt;
+    font-size: 10pt;
+  }
+  th {
+    background-color: #2e7d32;
+    color: #ffffff;
+    font-weight: bold;
+    text-align: left;
+    padding: 6pt 8pt;
+    border: 1pt solid #1b5e20;
+  }
+  td {
+    padding: 6pt 8pt;
+    border: 1pt solid #cbd5e1;
+    vertical-align: top;
+  }
+  tr:nth-child(even) {
+    background-color: #f8fafc;
+  }
+  code, pre {
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 9pt;
+  }
+  .code-block {
+    background-color: #f1f5f9;
+    border: 1pt solid #cbd5e1;
+    padding: 8pt;
+    margin-top: 6pt;
+    margin-bottom: 10pt;
+    white-space: pre-wrap;
+    word-break: break-all;
+    line-height: 1.3;
+  }
+  .highlight-badge {
+    background-color: #e0f2fe;
+    color: #0369a1;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 9pt;
+  }
+  .warning-box {
+    background-color: #fffbeb;
+    border-left: 4pt solid #f59e0b;
+    border: 1pt solid #fde68a;
+    padding: 8pt 12pt;
+    margin-top: 10pt;
+    margin-bottom: 10pt;
+    font-size: 10pt;
+  }
+</style>
+</head>
+<body>
+
+<div class="header-box">
+  <h1 style="border:none; margin:0; padding:0; color:#1b5e20;">AgriTech AI Guidance Moldova</h1>
+  <p style="font-size: 13pt; font-weight: bold; color: #2e7d32; margin-top: 4pt; margin-bottom: 4pt;">
+    Plan de Execuție și Diviziune a Muncii în Paralel (Echipă de 5 Persoane)
+  </p>
+  <p style="font-size: 9.5pt; color: #64748b; margin-bottom: 0;">
+    Document de Proiect | Arhitectură Zero-Blocking | Integrare Date agrodat.md & soluri.gov.md | Motor AI Hibrid
+  </p>
+</div>
+
+<h2>1. Obiectivul Proiectului și Arhitectura Hibridă</h2>
+<p>
+Proiectul își propune crearea unui asistent decizional inteligent pentru fermierii din Republica Moldova, care să recomande culturile optime, să estimeze randamentul (t/ha), să prevadă costurile și marjele de profit și să ofere avertizări agronomice în timp real.
+</p>
+
+<div class="warning-box">
+  <strong>Regula de Aur a Sistemului Hibrid (Anti-Halucinație):</strong><br>
+  Inteligența Artificială (LLM) <strong>NU</strong> calculează direct veniturile sau recolta, deoarece riscă să inventeze cifre. 
+  <strong>Backend-ul calculează matematic cifrele exacte</strong> (pe baza bonității solului din <em>soluri.gov.md</em> și a balanței apei din <em>agrodat.md</em>), iar <strong>Google Gemini API</strong> acționează ca un consultant agronomic de elită care sintetizează rezultatele, explică riscurile și ghidează fermierul în limbaj natural.
+</div>
+
+<h2>2. Principiul de Lucru în Paralel (Zero-Blocking)</h2>
+<p>
+Pentru ca toți cei 5 membri ai echipei să poată lucra simultan din Ziua 1 fără să fie blocați de progresul colegilor:
+</p>
+<ol>
+  <li><strong>Contractul JSON este bătut în cuie la start:</strong> Structura de date de mai jos reprezintă interfața unică de comunicare între toate modulele.</li>
+  <li><strong>Mock-first development:</strong> Frontend-ul folosește JSON-ul simulat. Serviciul AI rulează teste pe date simulate. Ingestia de date funcționează ca un proces izolat. Motorul de calcul este o librărie Python pură.</li>
+  <li><strong>Plug & Play la final:</strong> În Săptămâna 2-3, modulele se asamblează în FastAPI fără a necesita rescrierea codului.</li>
+</ol>
+
+<h2>3. Contractul Comun de Date (JSON Schema)</h2>
+<p>Formatul standardizat utilizat ca reper de toți membrii:</p>
+
+<div class="code-block">{
+  "parcel_id": "parc-001",
+  "cadastral_code": "0100123456",
+  "area_ha": 15.5,
+  "coordinates": [[28.83, 47.01], [28.84, 47.01], [28.84, 47.02], [28.83, 47.02]],
+  "soil_profile": {
+    "type": "Cernoziom tipic moderat humifer",
+    "bonitate_points": 76,
+    "humus_pct": 3.8,
+    "ph": 7.2,
+    "erosion_grade": "slab"
+  },
+  "climate_telemetry": {
+    "nearest_station_id": "agro-st-chisinau-02",
+    "distance_km": 4.2,
+    "soil_moisture_pct": 42.0,
+    "leaf_wetness_hours": 3.5,
+    "precipitation_last_30d_mm": 28.0,
+    "eto_evapotranspiration_mm": 4.5
+  },
+  "recommended_crops": [
+    {
+      "crop_name": "Floarea-soarelui",
+      "suitability_score": 92,
+      "estimated_yield": {"min_t_ha": 2.4, "max_t_ha": 3.2},
+      "estimated_costs_mdl_ha": 11500,
+      "estimated_revenue_mdl_ha": 22400,
+      "net_profit_mdl_ha": 10900
+    }
+  ],
+  "ai_guidance": {
+    "summary": "Solul are un potențial ridicat de bonitate, însă rezerva de apă din profilul 0-50 cm este limitativă.",
+    "risks": ["Deficit hidric în faza de înflorire", "Risc scăzut de fuzarioză datorită umidității reduse pe frunză"],
+    "actionable_steps": ["Semănat timpuriu pentru valorificarea umidității de iarnă", "Aplicare îngrășăminte cu fosfor"]
+  }
+}</div>
+
+<h2>4. Repartizarea Detaliată a Task-urilor (5 Persoane)</h2>
+
+<!-- PERSOANA 1 -->
+<div class="person-box">
+  <div class="person-title">👤 PERSOANA 1: Frontend & GIS Developer</div>
+  <div class="tech-stack"><strong>Tech Stack:</strong> Next.js (React), TailwindCSS, Leaflet / MapLibre GL, Lucide Icons, PWA</div>
+  <p><strong>Responsabilitate:</strong> Toată experiența utilizatorului, harta interactivă, desenarea parcelelor și vizualizarea recomandărilor.</p>
+  <ul>
+    <li><strong>Task 1.1 (Ziua 1):</strong> Inițializare proiect Next.js + Tailwind + suport PWA (mobil și desktop). Configurare client API cu date Mock din JSON-ul de mai sus.</li>
+    <li><strong>Task 1.2:</strong> Integrare hartă satelitară (Leaflet/MapLibre). Implementare instrument de desenare a parcelei agricole (poligon) cu calcul automat al ariei în hectare.</li>
+    <li><strong>Task 1.3:</strong> Căutare după număr cadastral sau localitate și afișare contur parcelă.</li>
+    <li><strong>Task 1.4:</strong> Dashboard de rezultate: carduri interactive pentru culturile recomandate (Randament t/ha, Costuri, Profit MDL), grafice de umiditate și bonitate.</li>
+    <li><strong>Task 1.5:</strong> Asistent conversațional (panou de chat lateral) și buton de descărcare a raportului PDF.</li>
+  </ul>
+</div>
+
+<!-- PERSOANA 2 -->
+<div class="person-box" style="border-left-color: #16a34a;">
+  <div class="person-title" style="color: #15803d;">👤 PERSOANA 2: Backend Core & Database Engineer</div>
+  <div class="tech-stack"><strong>Tech Stack:</strong> Python 3.11, FastAPI, PostgreSQL 16 cu PostGIS, SQLAlchemy/SQLModel, Docker</div>
+  <p><strong>Responsabilitate:</strong> Scheletul serverului, baza de date spațială, rutele API și orchestrarea tuturor componentelor.</p>
+  <ul>
+    <li><strong>Task 2.1 (Ziua 1):</strong> Configurare container Docker cu PostgreSQL + extensia PostGIS și Redis. Inițializare FastAPI cu structură modulară.</li>
+    <li><strong>Task 2.2:</strong> Expunere rute API cu răspunsuri Mock pentru Persoana 1 (astfel încât Frontend-ul să funcționeze din prima zi).</li>
+    <li><strong>Task 2.3:</strong> Definire tabele PostGIS: <code>parcels</code> (poligoane), <code>soil_profiles</code> (straturi de sol), <code>weather_stations</code> (puncte GPS).</li>
+    <li><strong>Task 2.4:</strong> Funcții spațiale SQL/PostGIS: găsirea tipului de sol predominant dintr-un poligon și identificarea celei mai apropiate stații meteo.</li>
+    <li><strong>Task 2.5:</strong> Integrarea modulelor agronomice (P4) și AI (P5) în endpoint-ul principal <code>POST /api/parcels/analyze</code>.</li>
+  </ul>
+</div>
+
+<!-- PERSOANA 3 -->
+<div class="person-box" style="border-left-color: #d97706;">
+  <div class="person-title" style="color: #b45309;">👤 PERSOANA 3: Data Engineer & Integration Specialist</div>
+  <div class="tech-stack"><strong>Tech Stack:</strong> Python, Playwright / BeautifulSoup, GeoPandas, GDAL, APScheduler / Cron</div>
+  <p><strong>Responsabilitate:</strong> Extragerea, curățarea și sincronizarea datelor de pe soluri.gov.md și agrodat.md.</p>
+  <ul>
+    <li><strong>Task 3.1:</strong> Analiză <code>soluri.gov.md</code> (servicii WMS/WFS, fișiere Shapefile/GeoJSON). Descărcare și conversie în poligoane curate.</li>
+    <li><strong>Task 3.2:</strong> Populare tabel PostGIS cu harta pedologică a Moldovei (tip de sol, humus %, pH, nota de bonitate, eroziune).</li>
+    <li><strong>Task 3.3:</strong> Analiză <code>agrodat.md</code> (puncte de măsurare, interogări XHR/scraping). Extragere listă stații și senzori.</li>
+    <li><strong>Task 3.4:</strong> Extragere telemetrie: temperatură aer/sol, umiditate sol la adâncimi, umiditate frunze, precipitații, evapotranspirație (ETo).</li>
+    <li><strong>Task 3.5:</strong> Creare worker automat de fundal (cron) care actualizează datele meteo zilnic și gestionează erorile sau stațiile offline.</li>
+  </ul>
+</div>
+
+<!-- PERSOANA 4 -->
+<div class="person-box" style="border-left-color: #9333ea;">
+  <div class="person-title" style="color: #7e22ce;">👤 PERSOANA 4: Agronomic & Financial Logic Engineer</div>
+  <div class="tech-stack"><strong>Tech Stack:</strong> Python (Librărie independentă de calcul), Pydantic, PyTest</div>
+  <p><strong>Responsabilitate:</strong> Baza de cunoștințe a culturilor din Moldova, formulele de recoltă, costurile și calculele economice exacte.</p>
+  <ul>
+    <li><strong>Task 4.1:</strong> Definire fișe tehnologice pentru 6 culturi principale din Moldova: Grâu de toamnă, Porumb, Floarea-soarelui, Rapiță, Soia, Orz.</li>
+    <li><strong>Task 4.2:</strong> Matricea de pretabilitate ecologică: cerințe optime de pH, textură sol, consum de apă (coeficient Kc), toleranță la secetă.</li>
+    <li><strong>Task 4.3:</strong> Algoritmul de randament: formulă deterministă care corelează nota de bonitate a solului cu deficitul de apă și temperatura pentru a calcula producția minimă și maximă (t/ha).</li>
+    <li><strong>Task 4.4:</strong> Modulul financiar: calcul costuri per hectar în MDL (semințe, motorină, îngrășăminte NPK, pesticide, lucrări mecanizate) și profitul net raportat la prețurile pieței locale.</li>
+    <li><strong>Task 4.5:</strong> Livrare modul ca pachet Python testat cu 100% acoperire unitară, apelabil prin <code>calculate_crop_economics()</code>.</li>
+  </ul>
+</div>
+
+<!-- PERSOANA 5 -->
+<div class="person-box" style="border-left-color: #e11d48;">
+  <div class="person-title" style="color: #be123c;">👤 PERSOANA 5: AI & LLM Integration Engineer</div>
+  <div class="tech-stack"><strong>Tech Stack:</strong> Python, Google Gemini API (SDK <code>google-genai</code>), Prompt Engineering, WeasyPrint/ReportLab</div>
+  <p><strong>Responsabilitate:</strong> Prompt engineering, integrarea Gemini 2.5 Flash, asistentul conversațional și generarea rapoartelor executive.</p>
+  <ul>
+    <li><strong>Task 5.1:</strong> Integrare SDK Google Gemini cu Structured Outputs (răspunsuri garantate în format JSON valid).</li>
+    <li><strong>Task 5.2:</strong> Conceperea prompturilor agronomice: injectarea datelor calculate de P4 și a profilului de sol/meteo de la P3 în contextul AI-ului.</li>
+    <li><strong>Task 5.3:</strong> Modul de detecție riscuri fitosanitare: corelarea orelor de umiditate pe frunze cu temperatura pentru avertizări de boli fungice (mană, făinare, rugină).</li>
+    <li><strong>Task 5.4:</strong> Asistent conversațional cu memorie de context pentru răspunsuri la întrebările fermierului despre parcela curentă.</li>
+    <li><strong>Task 5.5:</strong> Generator de rapoarte executive PDF conținând sinteza AI, devizul de cheltuieli și recomandările agrotehnice.</li>
+  </ul>
+</div>
+
+<h2>5. Calendarul de Lucru și Punctele de Integrare</h2>
+<table>
+  <thead>
+    <tr>
+      <th style="width: 20%;">Perioadă</th>
+      <th style="width: 50%;">Activități Paralele</th>
+      <th style="width: 30%;">Livrabila / Verificare</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Săptămâna 1</strong><br><span class="highlight-badge">Dezvoltare Izolată</span></td>
+      <td>
+        * P1 construiește interfața și harta cu date Mock.<br>
+        * P2 ridică PostGIS și creează endpoint-uri Mock.<br>
+        * P3 scrie scripturile de descărcare date.<br>
+        * P4 scrie algoritmii de bonitate și costuri.<br>
+        * P5 creează prompturile Gemini pe mostre simulate.
+      </td>
+      <td>Toți membrii au module funcționale local. Frontend-ul rulează fluid pe date simulate.</td>
+    </tr>
+    <tr>
+      <td><strong>Săptămâna 2</strong><br><span class="highlight-badge">Integrare Backend</span></td>
+      <td>
+        * P2 integrează modulul agronomic (P4) în API.<br>
+        * P2 integrează serviciul Gemini (P5) în endpoint-ul de analiză.<br>
+        * P3 populează baza PostGIS cu datele reale de sol.
+      </td>
+      <td>Backend-ul returnează analize reale pe baza unui poligon trimis în request.</td>
+    </tr>
+    <tr>
+      <td><strong>Săptămâna 3</strong><br><span class="highlight-badge">Conectare Full-Stack</span></td>
+      <td>
+        * P1 comută Frontend-ul de la Mock la API-ul real al lui P2.<br>
+        * P3 conectează fluxul automat de telemetrie de la agrodat.md.<br>
+        * Teste end-to-end pe parcele reale din raioanele Cahul, Orhei și Bălți.
+      </td>
+      <td>Flux complet: desenare parcelă -> intersecție sol -> calcul profit -> raport AI.</td>
+    </tr>
+    <tr>
+      <td><strong>Săptămâna 4</strong><br><span class="highlight-badge">Optimizare & Lansare</span></td>
+      <td>
+        * P5 finalizează exportul PDF și chat-ul contextual.<br>
+        * P1 ajustează experiența mobilă (PWA pe teren).<br>
+        * Testare cu 2-3 fermieri locali și ajustarea parametrilor de cost.
+      </td>
+      <td>Versiune MVP gata de lansare demonstrativă.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>6. Reguli Practice de Colaborare în Echipă</h2>
+<ul>
+  <li><strong>Două Repository-uri Git:</strong> 
+    <code>agri-guidance-frontend</code> (P1) și 
+    <code>agri-guidance-backend</code> (P2, P3, P4, P5).</li>
+  <li><strong>Branching:</strong> Fiecare membru lucrează doar pe branch-ul său de feature (ex: <code>feature/p1-map-tools</code>, <code>feature/p4-crop-formulas</code>).</li>
+  <li><strong>Standup Zilnic de 10 Minute:</strong> Răspuns rapid la 3 întrebări: <em>Ce am terminat? Ce fac azi? Este vreun blocaj la interfețe?</em></li>
+</ul>
+
+<hr style="border: none; border-top: 1pt solid #cbd5e1; margin-top: 20pt; margin-bottom: 10pt;">
+<p style="text-align: center; font-size: 9pt; color: #94a3b8;">
+  Document generat pentru echipa AgriTech AI Guidance Moldova &copy; 2026. Toate drepturile rezervate.
+</p>
+
+</body>
+</html>
