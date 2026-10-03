@@ -1,12 +1,14 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { MapPin, Search, Layers, RotateCcw, Check, Sparkles } from "lucide-react";
+import { MapPin, Search, Sparkles } from "lucide-react";
 
 interface ParcelMapProps {
   coordinates: number[][];
   areaHa: number;
   cadastralCode?: string | null;
+  soilBonitate?: number;
+  soilType?: string;
   onPolygonChange: (coords: number[][]) => void;
   onAnalyze: (cadastralCode?: string) => void;
   isAnalyzing: boolean;
@@ -59,6 +61,8 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
   coordinates,
   areaHa,
   cadastralCode,
+  soilBonitate = 0,
+  soilType,
   onPolygonChange,
   onAnalyze,
   isAnalyzing,
@@ -202,19 +206,19 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+    <div className="relative overflow-hidden rounded-[28px] border border-slate-200/80 bg-white shadow-[0_18px_50px_-30px_rgba(15,23,42,0.55)]">
       {/* Top Map Toolbar */}
-      <div className="p-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 bg-slate-50/50">
+      <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-white px-4 py-3 sm:px-5">
         {/* Preset Selector */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
-          <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-            Mostre Moldova:
+        <div className="flex min-w-0 items-center gap-2 overflow-x-auto pb-0.5">
+          <span className="shrink-0 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
+            Modele:
           </span>
           {PRESET_PARCELS.map((p) => (
             <button
               key={p.code}
               onClick={() => handleSelectPreset(p)}
-              className="text-xs font-medium px-2.5 py-1 rounded-md bg-white border border-slate-200 text-slate-700 hover:border-agri-500 hover:text-agri-700 transition-colors whitespace-nowrap shadow-xs"
+              className="shrink-0 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[11px] font-semibold text-slate-600 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-800"
             >
               {p.name}
             </button>
@@ -222,10 +226,10 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
         </div>
 
         {/* Layer Toggle */}
-        <div className="flex items-center gap-1 bg-slate-200/60 p-0.5 rounded-lg text-xs font-medium">
+        <div className="hidden shrink-0 items-center gap-1 rounded-xl bg-slate-100 p-1 text-[11px] font-bold sm:flex">
           <button
             onClick={() => toggleLayer("satellite")}
-            className={`px-2.5 py-1 rounded-md transition-all ${
+              className={`rounded-lg px-2.5 py-1.5 transition-all ${
               activeLayer === "satellite"
                 ? "bg-white text-slate-900 shadow-xs"
                 : "text-slate-600 hover:text-slate-900"
@@ -235,7 +239,7 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
           </button>
           <button
             onClick={() => toggleLayer("streets")}
-            className={`px-2.5 py-1 rounded-md transition-all ${
+              className={`rounded-lg px-2.5 py-1.5 transition-all ${
               activeLayer === "streets"
                 ? "bg-white text-slate-900 shadow-xs"
                 : "text-slate-600 hover:text-slate-900"
@@ -247,8 +251,8 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
       </div>
 
       {/* Cadastral Search & Analyze Action Bar */}
-      <div className="px-4 py-3 bg-white border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2 flex-1 min-w-[260px] max-w-md">
+      <div className="absolute left-4 right-4 top-16 z-20 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-white/80 bg-white/95 p-1.5 shadow-xl shadow-slate-900/10 backdrop-blur">
+        <div className="flex min-w-[220px] max-w-xl flex-1 items-center gap-2">
           <div className="relative w-full">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
@@ -256,36 +260,56 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
               value={inputCode}
               onChange={(e) => setInputCode(e.target.value)}
               placeholder="Număr cadastral (ex: 0100123456)..."
-              className="w-full pl-9 pr-3 py-1.5 text-sm rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-agri-500/20 focus:border-agri-500 text-slate-800"
+              className="w-full rounded-xl border-0 bg-transparent py-2 pl-9 pr-3 text-sm font-medium text-slate-800 outline-none ring-0 placeholder:text-slate-400 focus:border-0 focus:outline-none focus:ring-0"
             />
           </div>
         </div>
 
         <div className="flex items-center gap-3">
           <div className="text-right">
-            <div className="text-xs text-slate-500 font-medium">Suprafață Parcelă:</div>
-            <div className="text-sm font-bold text-slate-900">{areaHa.toFixed(2)} ha</div>
+            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Suprafață</div>
+            <div className="text-sm font-extrabold text-slate-900">{areaHa.toFixed(2)} ha</div>
           </div>
 
           <button
             onClick={() => onAnalyze(inputCode)}
             disabled={isAnalyzing}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg text-white bg-agri-600 hover:bg-agri-700 disabled:opacity-50 shadow-sm transition-all"
+            className="flex items-center gap-2 rounded-xl bg-agri-600 px-3 py-2 text-xs font-bold text-white shadow-md shadow-emerald-700/20 transition-all hover:bg-agri-700 disabled:opacity-50 sm:px-4 sm:text-sm"
           >
             <Sparkles className={`w-4 h-4 ${isAnalyzing ? "animate-spin" : ""}`} />
-            <span>{isAnalyzing ? "Se analizează..." : "Analizează Sol & Recoltă"}</span>
+            <span className="hidden sm:inline">{isAnalyzing ? "Se analizează..." : "Analizează parcela"}</span>
+            <span className="sm:hidden">Analizează</span>
           </button>
         </div>
       </div>
 
       {/* Leaflet Map Canvas */}
-      <div className="relative w-full h-[380px] sm:h-[440px] bg-slate-100">
+      <div className="relative h-[430px] w-full bg-slate-100 sm:h-[540px]">
         <div ref={mapContainerRef} className="w-full h-full z-10" />
 
         {/* Floating Map Overlay Info */}
-        <div className="absolute bottom-3 left-3 z-20 bg-white/95 backdrop-blur-xs px-3 py-2 rounded-lg border border-slate-200/80 shadow-md text-xs text-slate-700 flex items-center gap-2">
-          <MapPin className="w-4 h-4 text-agri-600 shrink-0" />
-          <span>Poligon activ: <strong>{currentCoords.length} puncte GPS</strong> înregistrate</span>
+        <div className="absolute bottom-4 left-4 z-20 flex items-center gap-2 rounded-xl border border-white/80 bg-white/95 px-3 py-2 text-xs font-medium text-slate-700 shadow-xl shadow-slate-900/10 backdrop-blur">
+          <MapPin className="h-4 w-4 shrink-0 text-agri-600" />
+          <span>Poligon activ: <strong>{currentCoords.length} puncte GPS</strong></span>
+        </div>
+
+        <div className="absolute bottom-4 right-4 z-20 hidden w-64 rounded-2xl border border-white/80 bg-white/95 p-4 shadow-xl shadow-slate-900/15 backdrop-blur md:block">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Parcelă selectată</span>
+            <span className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_0_4px_rgba(34,197,94,0.14)]" />
+          </div>
+          <div className="mt-3 flex items-start gap-2">
+            <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+            <div className="min-w-0">
+              <p className="font-bold text-slate-900">Parcela activă</p>
+              <p className="truncate text-xs text-slate-500">#{cadastralCode || inputCode}</p>
+            </div>
+          </div>
+          <p className="mt-4 text-3xl font-extrabold tracking-tight text-slate-950">{areaHa.toFixed(2)} <span className="text-sm font-bold text-slate-400">ha</span></p>
+          <div className="mt-3 flex items-center justify-between gap-2 border-t border-slate-100 pt-3 text-xs">
+            <span className="truncate text-slate-500">{soilType || "Profil pedologic"}</span>
+            <span className="shrink-0 rounded-lg bg-emerald-50 px-2 py-1 font-bold text-emerald-700">{soilBonitate}/100</span>
+          </div>
         </div>
       </div>
     </div>
