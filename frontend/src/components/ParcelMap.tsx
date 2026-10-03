@@ -21,7 +21,7 @@ interface ParcelMapProps {
   soilBonitate?: number;
   soilType?: string;
   onPolygonChange: (coords: number[][]) => void;
-  onAnalyze: (cadastralCode?: string, overrideCoords?: number[][]) => void;
+  onAnalyze: (cadastralCode?: string, overrideCoords?: number[][], officialAreaHa?: number) => void;
   isAnalyzing: boolean;
 }
 
@@ -190,15 +190,20 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
           const parcel = data?.parcel || data;
 
           if (data?.success && parcel?.coordinates && parcel.coordinates.length >= 3) {
+            const areaToUse =
+              parcel.area_ha && parcel.area_ha > 0
+                ? parcel.area_ha
+                : calculatePolygonAreaHa(parcel.coordinates);
+
             setInputCode(parcel.cadastral_code);
             setCurrentCoords(parcel.coordinates);
-            setCalculatedArea(parcel.area_ha);
+            setCalculatedArea(areaToUse);
             onPolygonChange(parcel.coordinates);
             renderPolygon(L, parcel.coordinates, false);
-            onAnalyze(parcel.cadastral_code, parcel.coordinates);
+            onAnalyze(parcel.cadastral_code, parcel.coordinates, areaToUse);
             setStatusMessage({
               type: "success",
-              text: `Parcelă selectată (${parcel.landuse || "Cadastru"}): Cod ${parcel.cadastral_code} • ${parcel.area_ha} ha`,
+              text: `Parcelă selectată (${parcel.landuse || "Cadastru"}): Cod ${parcel.cadastral_code} • ${areaToUse} ha`,
             });
             return;
           }
@@ -239,17 +244,22 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
         const parcel = data?.parcel || data;
 
         if (data?.success && parcel?.coordinates && parcel.coordinates.length >= 3) {
+          const areaToUse =
+            parcel.area_ha && parcel.area_ha > 0
+              ? parcel.area_ha
+              : calculatePolygonAreaHa(parcel.coordinates);
+
           setInputCode(parcel.cadastral_code);
           setCurrentCoords(parcel.coordinates);
-          setCalculatedArea(parcel.area_ha);
+          setCalculatedArea(areaToUse);
           onPolygonChange(parcel.coordinates);
           if (leafletRef.current) {
             renderPolygon(leafletRef.current, parcel.coordinates, true);
           }
-          onAnalyze(parcel.cadastral_code, parcel.coordinates);
+          onAnalyze(parcel.cadastral_code, parcel.coordinates, areaToUse);
           setStatusMessage({
             type: "success",
-            text: `Număr cadastral ${cleanCode} identificat (${parcel.area_ha} ha).`,
+            text: `Număr cadastral ${cleanCode} identificat (${areaToUse} ha).`,
           });
           return;
         }
@@ -438,7 +448,9 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
   useEffect(() => {
     if (coordinates && coordinates.length >= 3) {
       setCurrentCoords(coordinates);
-      setCalculatedArea(areaHa || calculatePolygonAreaHa(coordinates));
+      if (areaHa && areaHa > 0) {
+        setCalculatedArea(areaHa);
+      }
       if (leafletRef.current && polygonRef.current) {
         renderPolygon(leafletRef.current, coordinates, false);
       }
@@ -508,7 +520,7 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
     if (drawLayerRef.current) drawLayerRef.current.clearLayers();
     setIsDrawing(false);
     setDrawPoints([]);
-    onAnalyze(inputCode, closed);
+    onAnalyze(inputCode, closed, newArea);
     setStatusMessage({
       type: "success",
       text: `Contur salvat: ${newArea.toFixed(2)} ha (${closed.length - 1} puncte).`,
@@ -617,7 +629,7 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
                 <span>Desenează</span>
               </button>
               <button
-                onClick={() => onAnalyze(inputCode, currentCoords)}
+                onClick={() => onAnalyze(inputCode, currentCoords, calculatedArea)}
                 disabled={isAnalyzing}
                 className="flex items-center gap-2 rounded-xl bg-agri-600 px-3 py-2 text-xs font-bold text-white shadow-md shadow-emerald-700/20 transition-all hover:bg-agri-700 disabled:opacity-50 sm:px-4 sm:text-sm"
               >

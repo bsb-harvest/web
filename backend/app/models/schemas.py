@@ -96,6 +96,7 @@ class ParcelAnalyzeRequest(BaseModel):
     )
     user_id: Optional[str] = Field(None, description="ID fermier / utilizator")
     parcel_name: Optional[str] = Field("Parcela mea", description="Denumirea parcelei")
+    area_ha: Optional[float] = Field(None, description="Suprafața oficială cadastrală în hectare")
 
 
 class ChatAttachment(BaseModel):

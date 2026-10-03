@@ -38,15 +38,32 @@ export default function Home() {
     handleRunAnalysis();
   }, []);
 
-  const handleRunAnalysis = async (cadastralCode?: string, overrideCoords?: number[][]) => {
+  const handleRunAnalysis = async (
+    cadastralCode?: string,
+    overrideCoords?: number[][],
+    officialAreaHa?: number
+  ) => {
     setIsAnalyzing(true);
     const coordsToSend = overrideCoords || currentCoords;
+    const targetCadastral = cadastralCode || analysis.cadastral_code || undefined;
+    const targetArea =
+      officialAreaHa && officialAreaHa > 0
+        ? officialAreaHa
+        : (cadastralCode && cadastralCode === analysis.cadastral_code ? analysis.area_ha : undefined);
+
     try {
       const result = await analyzeParcel({
-        cadastral_code: cadastralCode || analysis.cadastral_code || undefined,
+        cadastral_code: targetCadastral,
         coordinates: coordsToSend,
+        area_ha: targetArea,
       });
-      setAnalysis(result.data);
+
+      const finalData: ParcelAnalysisResponse = {
+        ...result.data,
+        area_ha: targetArea && targetArea > 0 ? targetArea : result.data.area_ha,
+      };
+
+      setAnalysis(finalData);
       if (result.data.coordinates && result.data.coordinates.length >= 3) {
         setCurrentCoords(result.data.coordinates);
       }

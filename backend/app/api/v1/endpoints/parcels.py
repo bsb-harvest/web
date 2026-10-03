@@ -218,12 +218,19 @@ async def analyze_parcel(
 
     # 1. Geometrie si mediu pedoclimatic.
     try:
-        area_ha = await calculate_area_ha(db, request.coordinates)
+        calculated_area = await calculate_area_ha(db, request.coordinates)
     except ValueError as exc:
         # Poligon invalid primit de la client: eroare de cerere, nu de server.
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)
         ) from exc
+
+    # Daca cererea contine suprafata oficiala din cadastrul de stat (geodata.gov.md), o respectam cu prioritate
+    area_ha = (
+        round(request.area_ha, 2)
+        if (request.area_ha is not None and request.area_ha > 0)
+        else calculated_area
+    )
 
     soil = await _resolve_soil(db, request.coordinates, warnings)
     climate = await _resolve_climate(db, request.coordinates, warnings)

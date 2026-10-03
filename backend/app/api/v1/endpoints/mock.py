@@ -81,5 +81,7 @@ async def mock_analyze_parcel(request: ParcelAnalyzeRequest):
     if isinstance(sample, dict):
         sample["cadastral_code"] = request.cadastral_code or sample["cadastral_code"]
         sample["coordinates"] = request.coordinates
+        if request.area_ha and request.area_ha > 0:
+            sample["area_ha"] = round(request.area_ha, 2)
         return sample
     return sample

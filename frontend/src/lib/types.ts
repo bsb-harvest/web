@@ -66,6 +66,7 @@ export interface ParcelAnalyzeRequest {
   coordinates: number[][];
   user_id?: string;
   parcel_name?: string;
+  area_ha?: number;
 }
 
 export interface ChatAttachment {

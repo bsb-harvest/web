@@ -13,6 +13,7 @@ const API_BASE_URL =
 export interface AnalyzeParcelParams {
   cadastral_code?: string;
   coordinates: number[][];
+  area_ha?: number;
 }
 
 export interface AnalyzeParcelResult {
@@ -34,6 +35,7 @@ export async function analyzeParcel(
     const payload: ParcelAnalyzeRequest = {
       cadastral_code: params.cadastral_code,
       coordinates: params.coordinates,
+      area_ha: params.area_ha,
     };
 
     const res = await fetch(`${API_BASE_URL}/api/v1/parcels/analyze`, {
@@ -60,6 +62,7 @@ export async function analyzeParcel(
     data: {
       ...DEFAULT_PARCEL_DATA,
       cadastral_code: params.cadastral_code || DEFAULT_PARCEL_DATA.cadastral_code,
+      area_ha: (params.area_ha && params.area_ha > 0) ? params.area_ha : DEFAULT_PARCEL_DATA.area_ha,
       coordinates:
         params.coordinates && params.coordinates.length >= 3
           ? params.coordinates
