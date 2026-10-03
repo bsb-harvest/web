@@ -60,6 +60,7 @@ class RecommendedCrop(BaseModel):
     net_profit_max_mdl_ha: Optional[float] = Field(None, description="Profit net pe scenariul de recoltă maximă (MDL/ha)")
     margin_min_pct: Optional[float] = Field(None, description="Marja netă (%) pe scenariul de recoltă minimă")
     margin_max_pct: Optional[float] = Field(None, description="Marja netă (%) pe scenariul de recoltă maximă")
+    market_price_mdl_per_ton: Optional[float] = Field(None, description="Preț mediu de piață de referință (MDL/tonă)")
 
 
 class AIGuidance(BaseModel):

@@ -29,6 +29,7 @@ export default function Home() {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [currentCoords, setCurrentCoords] = useState<number[][]>([]);
+  const [viewMode, setViewMode] = useState<"per_ha" | "total">("per_ha");
   const activeRequestIdRef = useRef<number>(0);
 
   useEffect(() => {
@@ -97,8 +98,10 @@ export default function Home() {
     }
   };
 
+  const isTotalView = viewMode === "total" && analysis.area_ha > 0;
+  const viewMultiplier = isTotalView ? analysis.area_ha : 1;
   const bestCrop = analysis.recommended_crops[0];
-  const bestProfit = bestCrop?.net_profit_mdl_ha ?? 0;
+  const bestProfit = (bestCrop?.net_profit_mdl_ha ?? 0) * viewMultiplier;
 
   return (
     <div className="relative min-h-screen overflow-x-clip bg-transparent text-[#1F2F24]">
@@ -148,7 +151,34 @@ export default function Home() {
                 <div className="rounded-xl bg-emerald-100 p-2.5 text-emerald-700"><Leaf className="h-5 w-5" /></div>
                 Rezumat parcelă
               </div>
-              <span className="text-[11px] font-bold uppercase tracking-[0.15em] text-slate-400">Live</span>
+              <div className="flex items-center gap-1 rounded-xl bg-slate-100 p-1 text-[11px] font-bold">
+                <button
+                  onClick={() => setViewMode("per_ha")}
+                  className={`rounded-lg px-2.5 py-1 transition ${
+                    viewMode === "per_ha"
+                      ? "bg-white text-slate-900 shadow-2xs"
+                      : "text-slate-500 hover:text-slate-800"
+                  }`}
+                >
+                  1 ha
+                </button>
+                <button
+                  onClick={() => analysis.area_ha > 0 && setViewMode("total")}
+                  disabled={analysis.area_ha <= 0}
+                  title={
+                    analysis.area_ha > 0
+                      ? `Calculează pe toată suprafața (${analysis.area_ha} ha)`
+                      : "Selectează o parcelă pentru a activa calculul pe toată suprafața"
+                  }
+                  className={`rounded-lg px-2.5 py-1 transition ${
+                    isTotalView
+                      ? "bg-emerald-600 text-white shadow-2xs"
+                      : "text-slate-500 hover:text-slate-800 disabled:opacity-40"
+                  }`}
+                >
+                  {analysis.area_ha > 0 ? `${analysis.area_ha} ha` : "Total"}
+                </button>
+              </div>
             </div>
             <div className="mt-7 grid grid-cols-2 gap-6">
               <div>
@@ -156,13 +186,23 @@ export default function Home() {
                 <p className="mt-1 text-3xl font-extrabold tracking-tight text-slate-900">{analysis.soil_profile.bonitate_points}<span className="text-base text-slate-400">/100</span></p>
               </div>
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.13em] text-slate-400">Profit top</p>
-                <p className="mt-1 text-3xl font-extrabold tracking-tight text-emerald-700">{bestProfit.toLocaleString("ro-MD")}</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.13em] text-slate-400">
+                  {isTotalView ? `Profit (${analysis.area_ha} ha)` : "Profit top (1 ha)"}
+                </p>
+                <p className="mt-1 text-3xl font-extrabold tracking-tight text-emerald-700">
+                  {Math.round(bestProfit).toLocaleString("ro-MD")}{" "}
+                  <span className="text-sm font-bold text-slate-400">MDL</span>
+                </p>
               </div>
             </div>
             <div className="mt-6 flex items-center gap-2 border-t border-slate-100 pt-5 text-sm text-slate-500">
               <Activity className="h-4 w-4 text-emerald-600" />
-              <span>{bestCrop?.crop_name || "Alege o cultură"} este recomandarea curentă</span>
+              <span>
+                {bestCrop?.crop_name || "Alege o cultură"} este recomandarea curentă{" "}
+                <span className="font-semibold text-slate-700">
+                  ({isTotalView ? `total parcelă` : "per hectar"})
+                </span>
+              </span>
             </div>
           </div>
         </section>
@@ -200,7 +240,13 @@ export default function Home() {
           <MetricCard icon={Leaf} label="Bonitate sol" value={`${analysis.soil_profile.bonitate_points}/100`} detail={analysis.soil_profile.type} tone="green" />
           <MetricCard icon={Droplets} label="Umiditate" value={`${analysis.climate_telemetry.soil_moisture_pct}%`} detail="Rezervă utilă de apă" tone="blue" />
           <MetricCard icon={CloudSun} label="Telemetrie meteo" value={`${analysis.climate_telemetry.eto_evapotranspiration_mm} mm`} detail={`ETo / zi · ${analysis.climate_telemetry.distance_km} km`} tone="amber" />
-          <MetricCard icon={TrendingUp} label="Profit recomandat" value={`${bestProfit.toLocaleString("ro-MD")} MDL`} detail={`${bestCrop?.crop_name || "Cultura optimă"} / ha`} tone="violet" />
+          <MetricCard
+            icon={TrendingUp}
+            label={isTotalView ? `Profit (${analysis.area_ha} ha)` : "Profit recomandat"}
+            value={`${Math.round(bestProfit).toLocaleString("ro-MD")} MDL`}
+            detail={`${bestCrop?.crop_name || "Cultura optimă"} · ${isTotalView ? `total parcelă` : "per hectar"}`}
+            tone="violet"
+          />
         </section>
 
         <section className="page-section space-y-4">
@@ -215,14 +261,24 @@ export default function Home() {
         <section id="recommendations" className="page-section content-panel scroll-mt-24 rounded-[28px] border border-slate-200/80 bg-white/65 p-4 shadow-sm sm:p-6">
           <SectionHeading eyebrow="03 / Recomandări" title="Culturile potrivite pentru parcela ta" description="Compară rapid potrivirea, randamentul și profitul net estimat." />
           <div className="mt-5">
-            <CropCardsGrid crops={analysis.recommended_crops} />
+            <CropCardsGrid
+              crops={analysis.recommended_crops}
+              viewMode={viewMode}
+              areaHa={analysis.area_ha}
+              onToggleViewMode={setViewMode}
+            />
           </div>
         </section>
 
         <section id="financial" className="page-section content-panel scroll-mt-24 rounded-[28px] border border-slate-200/80 bg-white/65 p-4 shadow-sm sm:p-6">
           <SectionHeading eyebrow="04 / Financiar" title="Profitabilitate transparentă" description="Vezi cum se raportează investiția la profitul net pentru fiecare cultură." />
           <div className="mt-5">
-            <FinancialChart crops={analysis.recommended_crops} />
+            <FinancialChart
+              crops={analysis.recommended_crops}
+              viewMode={viewMode}
+              areaHa={analysis.area_ha}
+              onToggleViewMode={setViewMode}
+            />
           </div>
         </section>
       </main>

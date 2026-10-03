@@ -55,6 +55,7 @@ def calculate_crop_economics(
                 net_profit_max_mdl_ha=fin.net_profit_max_mdl_ha,
                 margin_min_pct=fin.margin_min_pct,
                 margin_max_pct=fin.margin_max_pct,
+                market_price_mdl_per_ton=crop.market_price_mdl_per_ton,
             )
         )
 

@@ -41,6 +41,12 @@ export interface RecommendedCrop {
   estimated_costs_mdl_ha: number;
   estimated_revenue_mdl_ha: number;
   net_profit_mdl_ha: number;
+  market_price_mdl_per_ton?: number;
+  break_even_yield_t_ha?: number;
+  net_profit_min_mdl_ha?: number;
+  net_profit_max_mdl_ha?: number;
+  margin_min_pct?: number;
+  margin_max_pct?: number;
   cost_breakdown?: ProductionCostBreakdown;
 }
 
