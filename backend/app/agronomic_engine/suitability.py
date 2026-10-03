@@ -1,15 +1,36 @@
 """
 Matricea de pretabilitate ecologică a culturilor.
 Responsabilitate: Persoana 4 (Agronomic & Financial Logic Engineer)
-Task 4.2: Calcul scor de pretabilitate (0 - 100 puncte).
+Task 4.2: Calcul scor de pretabilitate (0 - 100 puncte), diferențiat pe culturi.
+
+Scorul pleacă de la 100 și se ajustează multiplicativ cu factori în funcție de:
+  * pH-ul solului (interval optim + toleranță + penalizare mică lângă margine);
+  * conținutul de humus;
+  * gradul de eroziune;
+  * deficitul hidric relativ al culturii (FAO-33: kc_mid, ky, raportul ETa/ETc),
+    modulat de toleranța la secetă;
+  * nota de bonitate.
+Rezultatul final este limitat strict la [10, 98].
 """
 
 import logging
 
 from app.models.schemas import SoilProfile, ClimateTelemetry
 from app.agronomic_engine.crops_database import CropProfile
+from app.agronomic_engine.yield_calculator import relative_water_deficit
 
 logger = logging.getLogger(__name__)
+
+# pH: penalizare mică dacă pH-ul e în optim, dar la mai puțin de PH_EDGE_MARGIN de margine.
+PH_EDGE_MARGIN = 0.3
+PH_EDGE_PENALTY = 0.05
+
+# Ponderea penalizării hidrice fiziologice (scalează ky × deficit).
+WATER_DEFICIT_WEIGHT = 0.5
+# Ponderea bonus/penalizare după toleranța la secetă (scalată cu deficitul).
+DROUGHT_TOLERANCE_WEIGHT = 0.25
+# Semnul ajustării: culturile tolerante la secetă primesc bonus, cele sensibile penalizare.
+_DROUGHT_SIGN = {"ridicata": 1.0, "medie": 0.0, "scazuta": -1.0}
 
 
 def calculate_suitability_score(
@@ -24,7 +45,12 @@ def calculate_suitability_score(
 
     # 1. Evaluare pH sol pe baza intervalului optim și a toleranței (Task 4.1)
     if crop.ph_optimal_min <= soil.ph <= crop.ph_optimal_max:
-        ph_factor = 1.0
+        # În optim: penalizare mică dacă pH-ul e aproape de margine (risc de a ieși din interval).
+        margin = min(soil.ph - crop.ph_optimal_min, crop.ph_optimal_max - soil.ph)
+        if margin < PH_EDGE_MARGIN:
+            ph_factor = 1.0 - PH_EDGE_PENALTY * (1.0 - margin / PH_EDGE_MARGIN)
+        else:
+            ph_factor = 1.0
     else:
         # Abaterea față de cea mai apropiată limită a intervalului optim
         deviation = min(
@@ -64,29 +90,32 @@ def calculate_suitability_score(
     }
     score *= erosion_penalties.get(soil.erosion_grade, 0.90)
 
-    # 4. Evaluare Factor Hidric și Toleranță la Secetă (Task 4.1)
-    # Umiditatea optimă a solului este în jur de 45-60%
-    if climate.soil_moisture_pct < 35.0:
-        if crop.drought_tolerance == "scazuta":
-            # Ex: Porumbul sau Soia suferă masiv la secetă
-            score *= 0.72
-            logger.warning(
-                "Umiditatea solului (%.1f%%) este scăzută, iar %s are toleranță scăzută la secetă "
-                "— risc major de pierdere de recoltă; se recomandă irigare sau altă cultură.",
-                climate.soil_moisture_pct, crop.name
-            )
-        elif crop.drought_tolerance == "medie":
-            score *= 0.85
-            logger.warning(
-                "Umiditatea solului (%.1f%%) este scăzută pentru %s (toleranță medie la secetă) "
-                "— se recomandă monitorizarea rezervei de apă.",
-                climate.soil_moisture_pct, crop.name
-            )
-        elif crop.drought_tolerance == "ridicata":
-            # Ex: Floarea-soarelui sau Orzul rezistă mult mai bine
-            score *= 0.94
+    # 4. Deficit hidric relativ al culturii (FAO-33), modulat de toleranța la secetă (Task 4.2).
+    # Folosim același bilanț hidric ca motorul de randament (kc_mid, ETo, precipitații, umiditate),
+    # deci o cultură cu consum mare de apă (kc_mid ridicat) sau sensibilă (ky mare) este penalizată gradual.
+    deficit = relative_water_deficit(
+        crop,
+        climate.eto_evapotranspiration_mm,
+        climate.precipitation_last_30d_mm,
+        climate.soil_moisture_pct,
+    )
+    water_factor = 1.0 - WATER_DEFICIT_WEIGHT * crop.ky * deficit
+    tol_sign = _DROUGHT_SIGN.get(crop.drought_tolerance, 0.0)
+    drought_modifier = 1.0 + DROUGHT_TOLERANCE_WEIGHT * tol_sign * deficit
+    score *= water_factor * drought_modifier
+    if deficit > 0.0 and tol_sign < 0.0:
+        logger.warning(
+            "Cultura %s este sensibilă la secetă, iar parcela prezintă un deficit hidric relativ de %.0f%% "
+            "— pretabilitate redusă; se recomandă irigare sau o cultură mai rezistentă.",
+            crop.name, deficit * 100.0
+        )
 
-    # 5. Corelare cu Nota de Bonitate a solului
+    # 5. Textura solului (crop.suitable_textures) este intenționat IGNORATĂ:
+    # SoilProfile (schemas.py) nu expune un câmp de textură, iar schema nu se modifică aici.
+    # Când se va adăuga `texture` în SoilProfile, aici se va aplica o penalizare pentru
+    # texturile nepretabile (crop.suitable_textures), fără alte schimbări de structură.
+
+    # 6. Corelare cu Nota de Bonitate a solului
     # Bonitate 80-100 = excelent, 60-79 = bun, sub 50 = slab
     bonitate_factor = 0.6 + (soil.bonitate_points / 250.0)  # [0.6 - 1.0]
     score *= bonitate_factor

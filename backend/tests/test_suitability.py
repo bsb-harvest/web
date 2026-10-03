@@ -41,6 +41,14 @@ def test_ph_within_optimal_no_penalty():
     assert score > 70
 
 
+def test_ph_near_edge_small_penalty():
+    # pH în optim, dar exact pe margine => penalizare mică față de pH-ul central.
+    crop = CROPS_DATABASE["Rapita"]  # optim 6.0-7.2
+    s_center = calculate_suitability_score(crop, make_soil(ph=6.6), make_climate())  # margine 0.6 -> fără penalizare
+    s_edge = calculate_suitability_score(crop, make_soil(ph=7.2), make_climate())    # margine 0.0 -> penalizare mică
+    assert s_edge < s_center
+
+
 def test_ph_outside_but_within_tolerance_mild_penalty():
     crop = CROPS_DATABASE["Floarea-soarelui"]  # optim 6.5-7.5, toleranță 0.6
     s_in = calculate_suitability_score(crop, make_soil(ph=7.0), make_climate())
@@ -82,6 +90,20 @@ def test_drought_branches_all_tolerances(crop_name, tolerance):
         assert s_dry <= s_wet
 
 
+def test_scores_differentiate_on_sample_data():
+    # Pe datele sample scorurile trebuie să difere, iar culturile tolerante la secetă
+    # să fie peste cele sensibile atunci când apa este limitată.
+    soil = make_soil(bonitate_points=76, humus_pct=3.8, ph=7.2, erosion_grade="slab")
+    climate = make_climate(
+        soil_moisture_pct=42.0, precipitation_last_30d_mm=28.0,
+        eto_evapotranspiration_mm=4.5, leaf_wetness_hours=3.5,
+    )
+    scores = {name: calculate_suitability_score(c, soil, climate) for name, c in CROPS_DATABASE.items()}
+    assert len(set(scores.values())) > 1  # nu mai sunt toate egale
+    assert scores["Floarea-soarelui"] > scores["Porumb"]  # tolerantă la secetă > sensibilă
+    assert scores["Orz de toamna"] > scores["Soia"]
+
+
 def test_bonitate_minima_se_limiteaza_la_10():
     crop = CROPS_DATABASE["Porumb"]
     soil = make_soil(bonitate_points=1, ph=3.2, humus_pct=0.0, erosion_grade="puternic")
@@ -92,5 +114,9 @@ def test_bonitate_minima_se_limiteaza_la_10():
 def test_bonitate_maxima_se_limiteaza_la_98():
     crop = CROPS_DATABASE["Orz de toamna"]  # optim 6.2-8.0
     soil = make_soil(bonitate_points=100, ph=7.0, humus_pct=5.0, erosion_grade="lipsa")
-    score = calculate_suitability_score(crop, soil, make_climate(soil_moisture_pct=55.0))
+    # Climă fără deficit hidric (precipitații abundente, ETo mic) => fără penalizare de apă.
+    wet_climate = make_climate(
+        soil_moisture_pct=60.0, precipitation_last_30d_mm=200.0, eto_evapotranspiration_mm=2.0
+    )
+    score = calculate_suitability_score(crop, soil, wet_climate)
     assert score == 98

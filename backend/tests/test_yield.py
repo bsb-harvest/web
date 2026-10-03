@@ -8,6 +8,7 @@ from app.models.schemas import SoilProfile, ClimateTelemetry
 from app.agronomic_engine.crops_database import CROPS_DATABASE
 from app.agronomic_engine.yield_calculator import (
     calculate_crop_yield,
+    relative_water_deficit,
     _water_factor,
     _thermal_factor,
 )
@@ -49,6 +50,17 @@ def test_water_factor_zero_eto_guard():
     # ETc = 0 => fără deficit calculabil => factor neutru 1.0 (linia de gardă)
     crop = CROPS_DATABASE["Grau de toamna"]
     assert _water_factor(crop, 0.0, 10.0, 40.0) == 1.0
+
+
+def test_relative_water_deficit_range_and_guard():
+    crop = CROPS_DATABASE["Porumb"]
+    # ETc = 0 (ETo = 0) => deficit 0.0
+    assert relative_water_deficit(crop, 0.0, 10.0, 40.0) == 0.0
+    # Aport generos de apă => fără deficit
+    assert relative_water_deficit(crop, 2.0, 300.0, 60.0) == 0.0
+    # Secetă => deficit pozitiv subunitar
+    d = relative_water_deficit(crop, 6.0, 0.0, 10.0)
+    assert 0.0 < d <= 1.0
 
 
 def test_water_factor_clamped_floor():

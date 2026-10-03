@@ -48,6 +48,32 @@ def _clamp(value: float, low: float = 0.2, high: float = 1.0) -> float:
     return max(low, min(high, value))
 
 
+def relative_water_deficit(
+    crop: CropProfile,
+    eto_mm_day: float,
+    precipitation_mm: float,
+    soil_moisture_pct: float,
+) -> float:
+    """
+    Deficitul hidric relativ al culturii (adimensional, în [0, 1]):
+
+        ETc   = kc_mid × ETo × fereastră_zile        (necesarul de apă al culturii, mm)
+        aport = (umiditate_sol% / 100) × AWC_zonă_radiculară   (mm)
+        ETa   = min(ETc, precipitații + aport)       (apa efectiv consumată, mm)
+        deficit = 1 − ETa/ETc
+
+    0 = fără deficit (apă suficientă), valori mari = deficit sever.
+    Folosit atât de factorul hidric de randament, cât și de scorul de pretabilitate,
+    ca să existe o singură sursă de adevăr pentru bilanțul hidric.
+    """
+    etc = crop.kc_mid * eto_mm_day * WATER_BALANCE_WINDOW_DAYS
+    if etc <= 0:
+        return 0.0
+    soil_supply = (soil_moisture_pct / 100.0) * ROOT_ZONE_AWC_MM
+    eta = min(etc, precipitation_mm + soil_supply)
+    return max(0.0, 1.0 - eta / etc)
+
+
 def _water_factor(
     crop: CropProfile,
     eto_mm_day: float,
@@ -55,22 +81,11 @@ def _water_factor(
     soil_moisture_pct: float,
 ) -> float:
     """
-    Factorul hidric după FAO-33:
-
-        ETc   = kc_mid × ETo × fereastră_zile        (necesarul de apă al culturii, mm)
-        aport = (umiditate_sol% / 100) × AWC_zonă_radiculară   (mm)
-        ETa   = min(ETc, precipitații + aport)       (apa efectiv consumată, mm)
-        F_apă = 1 − ky × (1 − ETa/ETc)
-
+    Factorul hidric de randament după FAO-33: F_apă = 1 − ky × deficit_relativ.
     Rezultatul este limitat la [0.2, 1.0].
     """
-    etc = crop.kc_mid * eto_mm_day * WATER_BALANCE_WINDOW_DAYS
-    if etc <= 0:
-        return 1.0
-    soil_supply = (soil_moisture_pct / 100.0) * ROOT_ZONE_AWC_MM
-    eta = min(etc, precipitation_mm + soil_supply)
-    f_water = 1.0 - crop.ky * (1.0 - eta / etc)
-    return _clamp(f_water)
+    deficit = relative_water_deficit(crop, eto_mm_day, precipitation_mm, soil_moisture_pct)
+    return _clamp(1.0 - crop.ky * deficit)
 
 
 def _thermal_factor(

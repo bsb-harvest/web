@@ -6,7 +6,7 @@ Persoana 4: Agronomic & Financial Logic Engineer
 from app.agronomic_engine.calculator import calculate_crop_economics
 from app.agronomic_engine.crops_database import CROPS_DATABASE, CropProfile, SourceRef
 from app.agronomic_engine.suitability import calculate_suitability_score
-from app.agronomic_engine.yield_calculator import calculate_crop_yield
+from app.agronomic_engine.yield_calculator import calculate_crop_yield, relative_water_deficit
 from app.agronomic_engine.financial_engine import (
     calculate_crop_finances,
     calculate_crop_financials,
@@ -21,6 +21,7 @@ __all__ = [
     "SourceRef",
     "calculate_suitability_score",
     "calculate_crop_yield",
+    "relative_water_deficit",
     "calculate_crop_finances",
     "calculate_crop_financials",
     "build_cost_breakdown",
