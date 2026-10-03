@@ -1,0 +1,74 @@
+[
+  {
+    "id": "agro-st-chisinau-01",
+    "name": "Stația Agro-Meteo Chișinău Central",
+    "region": "Chișinău",
+    "latitude": 47.0105,
+    "longitude": 28.8350,
+    "elevation_m": 85,
+    "soil_moisture_pct": 42.0,
+    "leaf_wetness_hours": 3.5,
+    "precipitation_last_30d_mm": 28.0,
+    "eto_evapotranspiration_mm": 4.5
+  },
+  {
+    "id": "agro-st-balti-01",
+    "name": "Stația Agro-Meteo Bălți Nord",
+    "region": "Bălți",
+    "latitude": 47.7617,
+    "longitude": 27.9289,
+    "elevation_m": 102,
+    "soil_moisture_pct": 46.5,
+    "leaf_wetness_hours": 4.2,
+    "precipitation_last_30d_mm": 34.0,
+    "eto_evapotranspiration_mm": 3.9
+  },
+  {
+    "id": "agro-st-cahul-01",
+    "name": "Stația Agro-Meteo Cahul Sud",
+    "region": "Cahul",
+    "latitude": 45.9075,
+    "longitude": 28.1944,
+    "elevation_m": 119,
+    "soil_moisture_pct": 31.0,
+    "leaf_wetness_hours": 1.8,
+    "precipitation_last_30d_mm": 16.5,
+    "eto_evapotranspiration_mm": 5.4
+  },
+  {
+    "id": "agro-st-orhei-01",
+    "name": "Stația Agro-Meteo Orhei Codru",
+    "region": "Orhei",
+    "latitude": 47.3831,
+    "longitude": 28.8231,
+    "elevation_m": 140,
+    "soil_moisture_pct": 44.0,
+    "leaf_wetness_hours": 4.0,
+    "precipitation_last_30d_mm": 30.5,
+    "eto_evapotranspiration_mm": 4.2
+  },
+  {
+    "id": "agro-st-comrat-01",
+    "name": "Stația Agro-Meteo Comrat Găgăuzia",
+    "region": "Comrat",
+    "latitude": 46.3000,
+    "longitude": 28.6500,
+    "elevation_m": 60,
+    "soil_moisture_pct": 33.5,
+    "leaf_wetness_hours": 2.2,
+    "precipitation_last_30d_mm": 19.0,
+    "eto_evapotranspiration_mm": 5.1
+  },
+  {
+    "id": "agro-st-edinet-01",
+    "name": "Stația Agro-Meteo Edineț Cernoziom",
+    "region": "Edineț",
+    "latitude": 48.1681,
+    "longitude": 27.3050,
+    "elevation_m": 230,
+    "soil_moisture_pct": 48.0,
+    "leaf_wetness_hours": 5.1,
+    "precipitation_last_30d_mm": 41.0,
+    "eto_evapotranspiration_mm": 3.6
+  }
+]

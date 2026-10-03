@@ -1,0 +1,133 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AgriTechParcelContract",
+  "description": "Contractul comun de date (interfata unica intre Frontend, Backend, Agronomic Engine, AI Service si Data Pipeline)",
+  "type": "object",
+  "required": [
+    "parcel_id",
+    "cadastral_code",
+    "area_ha",
+    "coordinates",
+    "soil_profile",
+    "climate_telemetry",
+    "recommended_crops",
+    "ai_guidance"
+  ],
+  "properties": {
+    "parcel_id": {
+      "type": "string",
+      "example": "parc-001"
+    },
+    "cadastral_code": {
+      "type": "string",
+      "example": "0100123456"
+    },
+    "area_ha": {
+      "type": "number",
+      "minimum": 0.01,
+      "example": 15.5
+    },
+    "coordinates": {
+      "type": "array",
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "number"
+        },
+        "minItems": 2,
+        "maxItems": 2
+      },
+      "example": [
+        [28.83, 47.01],
+        [28.84, 47.01],
+        [28.84, 47.02],
+        [28.83, 47.02]
+      ]
+    },
+    "soil_profile": {
+      "type": "object",
+      "required": ["type", "bonitate_points", "humus_pct", "ph", "erosion_grade"],
+      "properties": {
+        "type": { "type": "string", "example": "Cernoziom tipic moderat humifer" },
+        "bonitate_points": { "type": "integer", "minimum": 1, "maximum": 100, "example": 76 },
+        "humus_pct": { "type": "number", "minimum": 0, "maximum": 20, "example": 3.8 },
+        "ph": { "type": "number", "minimum": 3.0, "maximum": 10.0, "example": 7.2 },
+        "erosion_grade": { "type": "string", "enum": ["lipsa", "slab", "moderat", "puternic"], "example": "slab" }
+      }
+    },
+    "climate_telemetry": {
+      "type": "object",
+      "required": [
+        "nearest_station_id",
+        "distance_km",
+        "soil_moisture_pct",
+        "leaf_wetness_hours",
+        "precipitation_last_30d_mm",
+        "eto_evapotranspiration_mm"
+      ],
+      "properties": {
+        "nearest_station_id": { "type": "string", "example": "agro-st-chisinau-02" },
+        "distance_km": { "type": "number", "example": 4.2 },
+        "soil_moisture_pct": { "type": "number", "example": 42.0 },
+        "leaf_wetness_hours": { "type": "number", "example": 3.5 },
+        "precipitation_last_30d_mm": { "type": "number", "example": 28.0 },
+        "eto_evapotranspiration_mm": { "type": "number", "example": 4.5 }
+      }
+    },
+    "recommended_crops": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "crop_name",
+          "suitability_score",
+          "estimated_yield",
+          "estimated_costs_mdl_ha",
+          "estimated_revenue_mdl_ha",
+          "net_profit_mdl_ha"
+        ],
+        "properties": {
+          "crop_name": { "type": "string", "example": "Floarea-soarelui" },
+          "suitability_score": { "type": "integer", "minimum": 0, "maximum": 100, "example": 92 },
+          "estimated_yield": {
+            "type": "object",
+            "required": ["min_t_ha", "max_t_ha"],
+            "properties": {
+              "min_t_ha": { "type": "number", "example": 2.4 },
+              "max_t_ha": { "type": "number", "example": 3.2 }
+            }
+          },
+          "estimated_costs_mdl_ha": { "type": "number", "example": 11500 },
+          "estimated_revenue_mdl_ha": { "type": "number", "example": 22400 },
+          "net_profit_mdl_ha": { "type": "number", "example": 10900 }
+        }
+      }
+    },
+    "ai_guidance": {
+      "type": "object",
+      "required": ["summary", "risks", "actionable_steps"],
+      "properties": {
+        "summary": {
+          "type": "string",
+          "example": "Solul are un potențial ridicat de bonitate, însă rezerva de apă din profilul 0-50 cm este limitativă."
+        },
+        "risks": {
+          "type": "array",
+          "items": { "type": "string" },
+          "example": [
+            "Deficit hidric în faza de înflorire",
+            "Risc scăzut de fuzarioză datorită umidității reduse pe frunză"
+          ]
+        },
+        "actionable_steps": {
+          "type": "array",
+          "items": { "type": "string" },
+          "example": [
+            "Semănat timpuriu pentru valorificarea umidității de iarnă",
+            "Aplicare îngrășăminte cu fosfor"
+          ]
+        }
+      }
+    }
+  }
+}
