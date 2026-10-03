@@ -32,6 +32,10 @@ class Settings(BaseSettings):
     SOLURI_WFS_ENDPOINT: str = "https://soluri.gov.md/geoserver/wfs"
     AGRODAT_API_ENDPOINT: str = "https://agrodat.md/api/v1"
 
+    # Background Data Pipeline Scheduler (Task 3.3)
+    SYNC_INTERVAL_HOURS: int = 1
+    ENABLE_SCHEDULER: bool = True
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

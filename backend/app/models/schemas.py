@@ -30,6 +30,7 @@ class ClimateTelemetry(BaseModel):
     leaf_wetness_hours: float = Field(..., description="Ore de umiditate pe frunze (ultimele 24h)")
     precipitation_last_30d_mm: float = Field(..., description="Precipitații cumulate în ultimele 30 zile (mm)")
     eto_evapotranspiration_mm: float = Field(..., description="Evapotranspirația de referință ETo (mm/zi)")
+    is_interpolated: bool = Field(default=False, description="Indică dacă telemetria a fost interpolată spațial prin IDW din cauza stației celei mai apropiate offline")
 
 
 class EstimatedYield(BaseModel):

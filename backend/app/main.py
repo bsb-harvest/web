@@ -3,10 +3,33 @@ AgriTech AI Guidance Moldova — Backend Server Entrypoint.
 Persoana 2: Backend Core & Database Engineer
 """
 
+import logging
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.api.v1.router import api_router
+from app.data_pipeline.worker import start_telemetry_scheduler, stop_telemetry_scheduler
+
+logger = logging.getLogger("AppMain")
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Pornire scheduler periodic de telemetrie la startup-ul aplicației
+    scheduler = None
+    if getattr(settings, "ENABLE_SCHEDULER", True):
+        try:
+            scheduler = start_telemetry_scheduler()
+            logger.info("APScheduler telemetrie agrodat.md inițializat cu succes în lifespan.")
+        except Exception as exc:
+            logger.warning(f"Nu s-a putut inițializa APScheduler la pornire: {exc}")
+    yield
+    # Oprire scheduler curată la shutdown
+    if scheduler:
+        stop_telemetry_scheduler(scheduler)
+        logger.info("APScheduler oprit curat la shutdown.")
+
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -14,7 +37,8 @@ app = FastAPI(
     description="Backend API pentru AgriTech AI Guidance Moldova — Integrat cu soluri.gov.md, agrodat.md și Google Gemini.",
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
     docs_url="/docs",
-    redoc_url="/redoc"
+    redoc_url="/redoc",
+    lifespan=lifespan
 )
 
 # Configurare CORS pentru Frontend
