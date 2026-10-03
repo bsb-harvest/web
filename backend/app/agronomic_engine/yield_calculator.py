@@ -1,57 +1,160 @@
 """
 Algoritmul determinist de prognoză a randamentului recoltei (t/ha).
 Responsabilitate: Persoana 4 (Agronomic & Financial Logic Engineer)
-Task 4.3: Corelare nota de bonitate, umiditatea solului si coeficientul culturii.
+Task 4.2/4.3: Formulă explicită de randament bazată pe bilanțul hidric FAO-33.
+
+Formula principală:
+
+    Recoltă = Randament_Bază(bonitate) × F_apă × F_termic × F_eroziune
+
+unde:
+  * Randament_Bază = bonitate_points × base_bonitate_yield_ratio   [t/ha în condiții optime]
+  * F_apă  (FAO-33):  ETc = kc_mid × ETo × fereastră_zile
+                      ETa = min(ETc, precipitații + aport_umiditate_sol)
+                      F_apă = 1 − ky × (1 − ETa/ETc)
+  * F_termic: proxy pentru stresul termic (ETo mare + precipitații mici), deoarece
+              ClimateTelemetry nu conține temperatura aerului; acceptă opțional
+              `air_temp_c` fără a modifica schemas.py.
+  * F_eroziune: coeficient de penalizare în funcție de gradul de eroziune al solului.
+
+Toți factorii sunt limitați la intervalul [0.2, 1.0].
+
+Banda de producție returnată:
+  * max_t_ha = scenariul unui an OPTIM (fără deficit hidric/termic: F_apă = F_termic = 1.0)
+  * min_t_ha = scenariul unui an SECETOS (precipitații × 0.5, ETo × 1.2)
 """
 
-from typing import Tuple
+from typing import Optional
 from app.models.schemas import SoilProfile, ClimateTelemetry, EstimatedYield
 from app.agronomic_engine.crops_database import CropProfile
+
+
+# Rezerva utilă de apă din zona radiculară 0-100 cm (mm), proxy pentru sol lutos de tip cernoziom.
+ROOT_ZONE_AWC_MM = 150.0
+# Fereastra temporală pe care comparăm consumul culturii (ETc) cu precipitațiile cumulate (30 zile).
+WATER_BALANCE_WINDOW_DAYS = 30
+
+# Penalizarea randamentului în funcție de gradul de eroziune a solului.
+EROSION_FACTORS = {
+    "lipsa": 1.0,
+    "slab": 0.95,
+    "moderat": 0.85,
+    "puternic": 0.70,
+}
+
+
+def _clamp(value: float, low: float = 0.2, high: float = 1.0) -> float:
+    """Limitează un factor multiplicativ la intervalul [low, high]."""
+    return max(low, min(high, value))
+
+
+def relative_water_deficit(
+    crop: CropProfile,
+    eto_mm_day: float,
+    precipitation_mm: float,
+    soil_moisture_pct: float,
+) -> float:
+    """
+    Deficitul hidric relativ al culturii (adimensional, în [0, 1]):
+
+        ETc   = kc_mid × ETo × fereastră_zile        (necesarul de apă al culturii, mm)
+        aport = (umiditate_sol% / 100) × AWC_zonă_radiculară   (mm)
+        ETa   = min(ETc, precipitații + aport)       (apa efectiv consumată, mm)
+        deficit = 1 − ETa/ETc
+
+    0 = fără deficit (apă suficientă), valori mari = deficit sever.
+    Folosit atât de factorul hidric de randament, cât și de scorul de pretabilitate,
+    ca să existe o singură sursă de adevăr pentru bilanțul hidric.
+    """
+    etc = crop.kc_mid * eto_mm_day * WATER_BALANCE_WINDOW_DAYS
+    if etc <= 0:
+        return 0.0
+    soil_supply = (soil_moisture_pct / 100.0) * ROOT_ZONE_AWC_MM
+    eta = min(etc, precipitation_mm + soil_supply)
+    return max(0.0, 1.0 - eta / etc)
+
+
+def _water_factor(
+    crop: CropProfile,
+    eto_mm_day: float,
+    precipitation_mm: float,
+    soil_moisture_pct: float,
+) -> float:
+    """
+    Factorul hidric de randament după FAO-33: F_apă = 1 − ky × deficit_relativ.
+    Rezultatul este limitat la [0.2, 1.0].
+    """
+    deficit = relative_water_deficit(crop, eto_mm_day, precipitation_mm, soil_moisture_pct)
+    return _clamp(1.0 - crop.ky * deficit)
+
+
+def _thermal_factor(
+    eto_mm_day: float,
+    precipitation_mm: float,
+    air_temp_c: Optional[float] = None,
+) -> float:
+    """
+    Factorul termic.
+
+    Deoarece ClimateTelemetry nu conține temperatura aerului, folosim un proxy:
+    un ETo ridicat (> 5 mm/zi) combinat cu precipitații reduse (< 20 mm/30 zile)
+    semnalează stres termic/hidric și reduce randamentul.
+
+    Dacă se furnizează explicit `air_temp_c`, aplicăm o penalizare liniară pentru
+    temperaturi extreme (> 30 °C sau < 5 °C). Rezultatul este limitat la [0.2, 1.0].
+    """
+    if air_temp_c is not None:
+        if air_temp_c > 30.0:
+            return _clamp(1.0 - (air_temp_c - 30.0) * 0.03)
+        if air_temp_c < 5.0:
+            return _clamp(1.0 - (5.0 - air_temp_c) * 0.03)
+        return 1.0
+
+    if eto_mm_day > 5.0 and precipitation_mm < 20.0:
+        return _clamp(0.88)
+    return 1.0
 
 
 def calculate_crop_yield(
     crop: CropProfile,
     soil: SoilProfile,
-    climate: ClimateTelemetry
+    climate: ClimateTelemetry,
+    air_temp_c: Optional[float] = None,
 ) -> EstimatedYield:
     """
-    Calculează intervalul realist de recoltă (min_t_ha, max_t_ha) pe baza:
-    - Notei de bonitate (puncte soluri.gov.md)
-    - Rezervei utile de apă și precipitațiilor cumulate (agrodat.md)
-    - Evapotranspirației ETo și a coeficientului biologic Kc
+    Calculează intervalul realist de recoltă (min_t_ha, max_t_ha) conform formulei:
+
+        Recoltă = Randament_Bază(bonitate) × F_apă × F_termic × F_eroziune
+
+    * max_t_ha — scenariul unui an OPTIM: fără deficit hidric sau termic
+      (F_apă = 1.0, F_termic = 1.0), eroziunea rămânând o proprietate permanentă a solului.
+    * min_t_ha — scenariul unui an SECETOS: precipitațiile scad la jumătate
+      (× 0.5) și evapotranspirația crește (ETo × 1.2), ceea ce reduce F_apă (FAO-33)
+      și poate declanșa factorul de stres termic.
+
+    Parametrul opțional `air_temp_c` permite rafinarea factorului termic fără a
+    modifica contractul de date (schemas.py). Output-ul rămâne EstimatedYield.
     """
-    # 1. Producția de bază determinată de bonitatea solului
-    base_potential = soil.bonitate_points * crop.base_bonitate_yield_ratio
+    # 1. Randament de bază determinat de bonitatea solului (calibrare păstrată)
+    base_yield = soil.bonitate_points * crop.base_bonitate_yield_ratio
 
-    # 2. Coeficientul hidric (apă sol + precipitații recente vs evapotranspirație ETo)
-    # Raport ideal umiditate sol ~50%
-    moisture_ratio = climate.soil_moisture_pct / 50.0
-    
-    # Impactul consumului de apă Kc
-    water_balance_factor = (
-        0.5 + 
-        (0.3 * min(1.5, moisture_ratio)) +
-        (0.2 * min(1.0, climate.precipitation_last_30d_mm / 45.0))
+    # 2. Factorul de eroziune (proprietate permanentă a parcelei, aplicat în ambele scenarii)
+    f_erosion = _clamp(EROSION_FACTORS.get(soil.erosion_grade, 0.90))
+
+    # 3. Scenariul AN OPTIM (fără deficit) -> max_t_ha
+    expected_max = base_yield * 1.0 * 1.0 * f_erosion
+
+    # 4. Scenariul AN SECETOS (precipitații × 0.5, ETo × 1.2) -> min_t_ha
+    drought_precipitation = climate.precipitation_last_30d_mm * 0.5
+    drought_eto = climate.eto_evapotranspiration_mm * 1.2
+    f_water_dry = _water_factor(
+        crop, drought_eto, drought_precipitation, climate.soil_moisture_pct
     )
+    f_thermal_dry = _thermal_factor(drought_eto, drought_precipitation, air_temp_c)
+    expected_min = base_yield * f_water_dry * f_thermal_dry * f_erosion
 
-    # Dacă ETo este foarte ridicat (> 5 mm/zi) și precipitațiile sunt mici, apare stres termic
-    if climate.eto_evapotranspiration_mm > 5.0 and climate.precipitation_last_30d_mm < 20.0:
-        water_balance_factor *= 0.88
-
-    # 3. Factorul de eroziune
-    erosion_factors = {
-        "lipsa": 1.0,
-        "slab": 0.95,
-        "moderat": 0.85,
-        "puternic": 0.70
-    }
-    erosion_coeff = erosion_factors.get(soil.erosion_grade, 0.90)
-
-    # Producția medie estimată
-    expected_yield = base_potential * water_balance_factor * erosion_coeff
-
-    # 4. Calcul interval min - max (marjă realistă de variație meteo ±12-15%)
-    min_yield = round(max(0.5, expected_yield * 0.85), 2)
-    max_yield = round(max(min_yield + 0.3, expected_yield * 1.15), 2)
+    # 5. Compunerea benzii de producție (min ≤ max, cu o marjă minimă de siguranță)
+    min_yield = round(max(0.5, expected_min), 2)
+    max_yield = round(max(min_yield + 0.3, expected_max), 2)
 
     return EstimatedYield(min_t_ha=min_yield, max_t_ha=max_yield)
