@@ -5,20 +5,316 @@
 @tailwind utilities;
 
 :root {
-  --foreground-rgb: 30, 41, 59;
-  --background-start-rgb: 248, 250, 252;
-  --background-end-rgb: 255, 255, 255;
+  --foreground-rgb: 31, 47, 36;
+  --background-start-rgb: 239, 247, 242;
+  --background-end-rgb: 250, 246, 235;
+  --corn-green: #4f932f;
+  --corn-leaf: #226b35;
+  --corn-sky: #72b8e5;
+  --corn-soil: #68432f;
+  --corn-sun: #e5a33b;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
   color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
+  background:
+    linear-gradient(180deg, rgba(242, 249, 245, 0.9) 0%, rgba(244, 249, 246, 0.86) 45%, rgba(250, 247, 239, 0.91) 100%),
+    url("/corn-field-background.png") center top / cover fixed no-repeat;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+.field-lines {
+  background-image: repeating-linear-gradient(
+    168deg,
+    rgba(34, 107, 53, 0.22) 0,
+    rgba(34, 107, 53, 0.22) 1px,
+    transparent 1px,
+    transparent 18px
+  );
+  -webkit-mask-image: linear-gradient(to bottom, transparent, black 25%, black 75%, transparent);
+  mask-image: linear-gradient(to bottom, transparent, black 25%, black 75%, transparent);
+}
+
+.organic-shape {
+  border-radius: 58% 42% 64% 36% / 42% 58% 42% 58%;
+  animation: organic-breathe 10s ease-in-out infinite alternate;
+}
+
+.brand-logo {
+  overflow: hidden;
+  transition: transform 220ms ease, box-shadow 220ms ease;
+}
+
+.brand-logo:hover {
+  transform: rotate(-2deg) scale(1.04);
+  box-shadow: 0 12px 24px -14px rgba(104, 67, 47, 0.55);
+}
+
+.page-content > section {
+  animation: section-rise 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.page-content > section:nth-of-type(2) {
+  animation-delay: 100ms;
+}
+
+.page-content > section:nth-of-type(3) {
+  animation-delay: 180ms;
+}
+
+.page-content > section:nth-of-type(4) {
+  animation-delay: 260ms;
+}
+
+.page-content > section:nth-of-type(5) {
+  animation-delay: 340ms;
+}
+
+.page-content > section:nth-of-type(6) {
+  animation-delay: 420ms;
+}
+
+.hero-badge {
+  animation: fade-slide-up 650ms 80ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.hero-heading {
+  animation: fade-slide-up 700ms 150ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.hero-copy {
+  animation: fade-slide-up 700ms 230ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.hero-action {
+  animation: fade-slide-up 700ms 310ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.summary-card {
+  animation: summary-card-in 800ms 180ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  transition: transform 220ms ease, box-shadow 220ms ease;
+}
+
+.summary-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 24px 48px -30px rgba(34, 107, 53, 0.45);
+}
+
+.metric-card {
+  transition: transform 220ms ease, box-shadow 220ms ease, border-color 220ms ease;
+}
+
+.metric-card:hover {
+  border-color: rgba(79, 147, 47, 0.35);
+}
+
+.content-panel {
+  transition: transform 240ms ease, box-shadow 240ms ease, border-color 240ms ease;
+}
+
+.content-panel:hover {
+  border-color: rgba(79, 147, 47, 0.28);
+  box-shadow: 0 18px 42px -30px rgba(34, 107, 53, 0.42);
+}
+
+.chat-launcher {
+  animation: chat-launcher-in 700ms 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.chat-panel-enter {
+  animation: chat-panel-enter 280ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.chat-panel {
+  box-shadow: 0 28px 80px -28px rgba(15, 23, 42, 0.5);
+}
+
+.chat-panel-header {
+  background:
+    radial-gradient(circle at 92% 0%, rgba(167, 243, 208, 0.5), transparent 34%),
+    linear-gradient(135deg, #ffffff 0%, #f2fbf5 100%);
+}
+
+.chat-messages {
+  background:
+    radial-gradient(circle at 12% 4%, rgba(167, 243, 208, 0.2), transparent 24%),
+    #fbfdfb;
+  scrollbar-width: thin;
+  scrollbar-color: #cbded0 transparent;
+}
+
+.chat-messages::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: #cbded0;
+}
+
+.chat-bubble {
+  box-shadow: 0 10px 24px -18px rgba(15, 23, 42, 0.35);
+}
+
+.chat-bubble-ai {
+  border: 1px solid #e1eee4;
+  background: #ffffff;
+}
+
+.chat-bubble-user {
+  background: linear-gradient(135deg, #10a861 0%, #078a50 100%);
+  box-shadow: 0 12px 25px -16px rgba(6, 142, 79, 0.9);
+}
+
+.chat-quick-section {
+  background: linear-gradient(180deg, #f7fbf8 0%, #ffffff 100%);
+}
+
+.chat-quick-button {
+  border-color: #dcebe0;
+}
+
+.chat-quick-button:hover {
+  border-color: #86d6a4;
+  background: #effaf2;
+  color: #166534;
+  transform: translateY(-1px);
+}
+
+.chat-input-section {
+  background: #ffffff;
+}
+
+.chat-input-shell {
+  border-color: #dce8df;
+  background: #f8fbf9;
+  transition: border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
+}
+
+.chat-input-shell:focus-within {
+  border-color: #65c98b;
+  background: #ffffff;
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
+}
+
+.chat-loading-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: #16a34a;
+  animation: chat-loading-dot 900ms ease-in-out infinite;
+}
+
+@keyframes chat-panel-enter {
+  from {
+    opacity: 0;
+    transform: translateX(28px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes chat-loading-dot {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: translateY(0);
+  }
+
+  50% {
+    opacity: 1;
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes organic-breathe {
+  from {
+    opacity: 0.5;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes section-rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes summary-card-in {
+  from {
+    opacity: 0;
+    transform: translateX(22px) scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes chat-launcher-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.92);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-panel-enter,
+  .chat-loading-dot,
+  .organic-shape,
+  .page-content > section,
+  .hero-badge,
+  .hero-heading,
+  .hero-copy,
+  .hero-action,
+  .summary-card,
+  .chat-launcher {
+    animation: none;
+  }
+}
+
+button,
+input {
+  font: inherit;
+}
+
+::selection {
+  background: #bbf7d0;
+  color: #14532d;
 }
 
 /* Custom leaflet map adjustments */
@@ -26,4 +322,15 @@ body {
   width: 100%;
   height: 100%;
   font-family: inherit;
+}
+
+.leaflet-control-zoom,
+.leaflet-control-attribution {
+  border: 0 !important;
+  box-shadow: 0 8px 20px -12px rgba(15, 23, 42, 0.6) !important;
+}
+
+.leaflet-control-zoom a {
+  border: 0 !important;
+  color: #334155 !important;
 }

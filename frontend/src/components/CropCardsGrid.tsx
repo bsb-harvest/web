@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { RecommendedCrop } from "@/lib/types";
-import { TrendingUp, Coins, ChevronDown, ChevronUp, Check, Award, Sprout } from "lucide-react";
+import { ChevronDown, ChevronUp, Award, Sprout } from "lucide-react";
 
 interface CropCardsGridProps {
   crops: RecommendedCrop[];
@@ -17,21 +17,21 @@ export const CropCardsGrid: React.FC<CropCardsGridProps> = ({ crops }) => {
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h3 className="text-base font-bold text-slate-900">
-            Ierarhia Culturilor Recomandate
+          <h3 className="text-xl font-extrabold tracking-tight text-slate-950">
+            Recomandări pentru parcelă
           </h3>
-          <p className="text-xs text-slate-500">
-            Calcul determinist: bonitate pedologică &times; regim hidric &times; deviz cheltuieli MDL/ha
+          <p className="mt-1 text-sm text-slate-500">
+            Scorurile combină bonitatea, regimul hidric și marja estimată în MDL/ha.
           </p>
         </div>
-        <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-700">
-          {crops.length} Culturi Analizate
+        <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-emerald-700">
+          {crops.length} culturi analizate
         </span>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         {crops.map((crop, idx) => {
           const isTop = idx === 0;
           const isExpanded = expandedIndex === idx;
@@ -39,47 +39,44 @@ export const CropCardsGrid: React.FC<CropCardsGridProps> = ({ crops }) => {
           return (
             <div
               key={crop.crop_name}
-              className={`rounded-2xl border transition-all duration-200 bg-white p-5 flex flex-col justify-between ${
+              className={`flex flex-col justify-between rounded-[22px] border p-5 transition-all duration-200 ${
                 isTop
-                  ? "border-emerald-500 ring-2 ring-emerald-500/20 shadow-md"
-                  : "border-slate-200 hover:border-slate-300 shadow-xs"
+                  ? "border-emerald-400 bg-gradient-to-br from-emerald-50/80 via-white to-white shadow-lg shadow-emerald-900/10 ring-1 ring-emerald-200"
+                  : "border-slate-200 bg-white shadow-sm hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-lg"
               }`}
             >
               <div>
                 {/* Header with Rank & Score */}
                 <div className="flex items-start justify-between gap-2 mb-3">
-                  <div className="flex items-center gap-2">
+                  <div className="flex min-w-0 items-center gap-2">
                     <div
-                      className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs ${
+                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl font-extrabold text-xs ${
                         isTop
-                          ? "bg-emerald-600 text-white shadow-xs"
+                          ? "bg-emerald-600 text-white shadow-md shadow-emerald-700/20"
                           : "bg-slate-100 text-slate-700"
                       }`}
                     >
                       #{idx + 1}
                     </div>
-                    <div>
-                      <h4 className="font-bold text-slate-900 text-base flex items-center gap-1.5">
+                    <div className="min-w-0">
+                      <h4 className="flex items-center gap-1.5 truncate text-base font-extrabold text-slate-950">
+                        <Sprout className={`h-4 w-4 shrink-0 ${isTop ? "text-emerald-600" : "text-slate-400"}`} />
                         {crop.crop_name}
-                        {isTop && (
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
-                            Cea mai rentabilă
-                          </span>
-                        )}
                       </h4>
+                      {isTop && <span className="mt-1 inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-emerald-700"><Award className="h-3 w-3" /> Cea mai bună marjă</span>}
                     </div>
                   </div>
 
                   {/* Suitability Badge */}
                   <div className="text-right">
-                    <div className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-100">
+                    <div className="rounded-lg border border-emerald-100 bg-emerald-50 px-2 py-1 text-[11px] font-bold text-emerald-700">
                       {crop.suitability_score}% Potrivire
                     </div>
                   </div>
                 </div>
 
                 {/* Suitability Progress Bar */}
-                <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden mb-4">
+                <div className="mb-5 mt-4 h-2 w-full overflow-hidden rounded-full bg-slate-100">
                   <div
                     className={`h-full rounded-full transition-all duration-500 ${
                       crop.suitability_score >= 85
@@ -93,22 +90,22 @@ export const CropCardsGrid: React.FC<CropCardsGridProps> = ({ crops }) => {
                 </div>
 
                 {/* 3 Metric Badges */}
-                <div className="grid grid-cols-3 gap-2 text-center py-2 border-y border-slate-100 mb-3">
+                <div className="mb-3 grid grid-cols-3 gap-2 border-y border-slate-100 py-3 text-center">
                   <div>
-                    <span className="text-[11px] text-slate-500 block font-medium">Recoltă (t/ha)</span>
-                    <span className="text-sm font-bold text-slate-800">
+                    <span className="block text-[10px] font-bold uppercase tracking-wide text-slate-400">Recoltă (t/ha)</span>
+                    <span className="mt-1 block text-sm font-extrabold text-slate-800">
                       {crop.estimated_yield.min_t_ha} - {crop.estimated_yield.max_t_ha}
                     </span>
                   </div>
                   <div>
-                    <span className="text-[11px] text-slate-500 block font-medium">Investiție</span>
-                    <span className="text-sm font-bold text-slate-800">
+                    <span className="block text-[10px] font-bold uppercase tracking-wide text-slate-400">Investiție</span>
+                    <span className="mt-1 block text-sm font-extrabold text-slate-800">
                       {crop.estimated_costs_mdl_ha.toLocaleString("ro-MD")} MDL
                     </span>
                   </div>
                   <div>
-                    <span className="text-[11px] text-slate-500 block font-medium">Profit Net</span>
-                    <span className={`text-sm font-extrabold ${
+                    <span className="block text-[10px] font-bold uppercase tracking-wide text-slate-400">Profit net</span>
+                    <span className={`mt-1 block text-sm font-extrabold ${
                       crop.net_profit_mdl_ha > 0 ? "text-emerald-700" : "text-rose-600"
                     }`}>
                       {crop.net_profit_mdl_ha.toLocaleString("ro-MD")} MDL
@@ -121,14 +118,14 @@ export const CropCardsGrid: React.FC<CropCardsGridProps> = ({ crops }) => {
               <div>
                 <button
                   onClick={() => toggleExpand(idx)}
-                  className="w-full text-xs font-semibold text-slate-500 hover:text-slate-800 flex items-center justify-center gap-1 py-1.5 transition-colors"
+                  className="flex w-full items-center justify-center gap-1 rounded-xl py-2 text-xs font-bold text-slate-500 transition-colors hover:bg-slate-50 hover:text-emerald-700"
                 >
                   <span>{isExpanded ? "Ascunde devizul de costuri" : "Vezi devizul complet (MDL/ha)"}</span>
                   {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                 </button>
 
                 {isExpanded && crop.cost_breakdown && (
-                  <div className="mt-2 pt-2 border-t border-slate-100 space-y-1.5 text-xs text-slate-600 bg-slate-50/70 p-3 rounded-lg">
+                  <div className="mt-2 space-y-1.5 rounded-xl border border-slate-100 bg-slate-50/70 p-3 pt-3 text-xs text-slate-600">
                     <div className="flex justify-between">
                       <span>Semințe certificate:</span>
                       <span className="font-semibold">{crop.cost_breakdown.seeds_mdl?.toLocaleString()} MDL</span>
