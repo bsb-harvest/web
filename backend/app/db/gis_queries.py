@@ -133,14 +133,27 @@ async def find_dominant_soil(
     return SoilMatch(profile=profile, coverage_pct=round(coverage, 1), components=len(rows))
 
 
-async def find_nearest_station(
-    session: AsyncSession, coordinates: List[List[float]]
+async def _nearest_station(
+    session: AsyncSession, point_expr: str, params: dict
 ) -> Optional[StationMatch]:
-    wkt = coords_to_wkt(coordinates)
+    """
+    Nucleul comun: statia activa cea mai apropiata de un punct de referinta,
+    plus ultima ei telemetrie.
 
+    point_expr este o expresie SQL scrisa de noi (centroidul unui poligon sau
+    un punct explicit), niciodata text venit de la utilizator; valorile trec
+    exclusiv prin parametri legati.
+
+    Doua ajustari fata de datele brute:
+      - leaf_wetness se pastreaza in minute, iar contractul cere ore
+        (252 min -> 4.2 h). Fara impartirea la 60, stratul AI ar raporta un
+        risc fungic catastrofal inexistent;
+      - precipitation_mm contine deja cumulatul pe 30 de zile, deci se ia ca
+        atare, nu se insumeaza.
+    """
     station = (await session.execute(
-        text("""
-            WITH p AS (SELECT ST_Centroid(ST_GeomFromText(:wkt, 4326)) AS c)
+        text(f"""
+            WITH p AS (SELECT {point_expr} AS c)
             SELECT
                 w.id,
                 w.name,
@@ -153,7 +166,7 @@ async def find_nearest_station(
             ORDER BY ST_SetSRID(ST_MakePoint(w.longitude, w.latitude), 4326) <-> p.c
             LIMIT 1
         """),
-        {"wkt": wkt},
+        params,
     )).mappings().first()
 
     if not station:
@@ -204,3 +217,73 @@ async def find_nearest_station(
         station_name=station["name"],
         recorded_at=latest["recorded_at"],
     )
+
+
+async def find_nearest_station(
+    session: AsyncSession, coordinates: List[List[float]]
+) -> Optional[StationMatch]:
+    """Statia activa cea mai apropiata de CENTRUL parcelei (Task 2.3)."""
+    return await _nearest_station(
+        session,
+        "ST_Centroid(ST_GeomFromText(:wkt, 4326))",
+        {"wkt": coords_to_wkt(coordinates)},
+    )
+
+
+async def find_nearest_station_by_point(
+    session: AsyncSession, lat: float, lng: float
+) -> Optional[StationMatch]:
+    """
+    Varianta pentru coordonate GPS singulare, folosita de /weather/telemetry
+    (fermierul atinge un punct pe harta, nu a desenat inca o parcela).
+    """
+    if not (MD_LNG_MIN <= lng <= MD_LNG_MAX and MD_LAT_MIN <= lat <= MD_LAT_MAX):
+        raise ValueError(
+            f"Punct in afara Republicii Moldova: lat={lat}, lng={lng}."
+        )
+
+    return await _nearest_station(
+        session,
+        "ST_SetSRID(ST_MakePoint(:lng, :lat), 4326)",
+        {"lat": lat, "lng": lng},
+    )
+
+
+async def list_active_stations(session: AsyncSession) -> List[dict]:
+    """
+    Reteaua de statii agro-meteo, citita din baza de date (nu din fisierul seed),
+    cu marcajul ultimei masuratori primite de la fiecare.
+    """
+    rows = (await session.execute(
+        text("""
+            SELECT
+                w.id,
+                w.name,
+                w.region,
+                w.latitude,
+                w.longitude,
+                w.elevation_m,
+                (w.is_active = 1) AS is_active,
+                (
+                    SELECT MAX(t.recorded_at)
+                    FROM agro_weather_telemetry t
+                    WHERE t.station_id = w.id
+                ) AS last_reading_at
+            FROM weather_stations w
+            ORDER BY w.name
+        """)
+    )).mappings().all()
+
+    return [
+        {
+            "id": r["id"],
+            "name": r["name"],
+            "region": r["region"],
+            "latitude": _f(r["latitude"]),
+            "longitude": _f(r["longitude"]),
+            "elevation_m": r["elevation_m"],
+            "is_active": bool(r["is_active"]),
+            "last_reading_at": r["last_reading_at"],
+        }
+        for r in rows
+    ]
