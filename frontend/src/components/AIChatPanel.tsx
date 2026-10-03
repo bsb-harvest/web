@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { X, Send, Bot, Sparkles, HelpCircle } from "lucide-react";
 import { ChatMessage, ParcelAnalysisResponse } from "@/lib/types";
 import { sendChatMessage } from "@/lib/api";
+import ReactMarkdown from "react-markdown";
 
 interface AIChatPanelProps {
   isOpen: boolean;
@@ -115,13 +116,57 @@ export const AIChatPanel: React.FC<AIChatPanelProps> = ({
                 </div>
               )}
               <div
-                className={`chat-bubble max-w-[82%] rounded-[20px] px-4 py-3 text-sm leading-6 ${
+                className={`chat-bubble max-w-[85%] rounded-[20px] px-4 py-3 text-sm leading-6 ${
                   m.sender === "user"
                     ? "chat-bubble-user rounded-br-md text-white"
-                    : "chat-bubble-ai rounded-bl-md text-slate-700"
+                    : "chat-bubble-ai rounded-bl-md text-slate-800"
                 }`}
               >
-                {m.text}
+                {m.sender === "ai" ? (
+                  <div className="space-y-1.5 break-words">
+                    <ReactMarkdown
+                      components={{
+                        p: ({ children }) => (
+                          <p className="mb-2 last:mb-0 leading-relaxed text-slate-800">{children}</p>
+                        ),
+                        strong: ({ children }) => (
+                          <strong className="font-extrabold text-slate-950">{children}</strong>
+                        ),
+                        em: ({ children }) => <em className="italic">{children}</em>,
+                        h1: ({ children }) => (
+                          <h3 className="mt-3 mb-1 text-base font-extrabold text-slate-950">{children}</h3>
+                        ),
+                        h2: ({ children }) => (
+                          <h4 className="mt-2.5 mb-1 text-sm font-bold text-slate-950">{children}</h4>
+                        ),
+                        h3: ({ children }) => (
+                          <h5 className="mt-2 mb-1 text-sm font-bold text-slate-900">{children}</h5>
+                        ),
+                        ul: ({ children }) => (
+                          <ul className="my-2 ml-4 list-disc space-y-1 text-slate-700">{children}</ul>
+                        ),
+                        ol: ({ children }) => (
+                          <ol className="my-2 ml-4 list-decimal space-y-1 text-slate-700">{children}</ol>
+                        ),
+                        li: ({ children }) => <li className="leading-snug">{children}</li>,
+                        blockquote: ({ children }) => (
+                          <blockquote className="my-2 border-l-2 border-emerald-500 bg-emerald-50/60 py-1 pl-3 italic text-slate-700 rounded-r">
+                            {children}
+                          </blockquote>
+                        ),
+                        code: ({ children }) => (
+                          <code className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-xs font-semibold text-emerald-800">
+                            {children}
+                          </code>
+                        ),
+                      }}
+                    >
+                      {m.text}
+                    </ReactMarkdown>
+                  </div>
+                ) : (
+                  <p className="whitespace-pre-wrap">{m.text}</p>
+                )}
                 <span className={`mt-1.5 block text-right text-[10px] ${m.sender === "user" ? "text-emerald-100" : "text-slate-400"}`}>
                   {m.timestamp}
                 </span>
