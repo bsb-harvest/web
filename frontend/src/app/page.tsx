@@ -26,14 +26,18 @@ export default function Home() {
     handleRunAnalysis();
   }, []);
 
-  const handleRunAnalysis = async (cadastralCode?: string) => {
+  const handleRunAnalysis = async (cadastralCode?: string, overrideCoords?: number[][]) => {
     setIsAnalyzing(true);
+    const coordsToSend = overrideCoords || currentCoords;
     try {
       const result = await analyzeParcel({
         cadastral_code: cadastralCode || analysis.cadastral_code || undefined,
-        coordinates: currentCoords,
+        coordinates: coordsToSend,
       });
       setAnalysis(result.data);
+      if (result.data.coordinates && result.data.coordinates.length >= 3) {
+        setCurrentCoords(result.data.coordinates);
+      }
       setIsMock(result.isMock);
     } catch (err) {
       console.error("Eroare la rularea analizei:", err);
@@ -86,7 +90,7 @@ export default function Home() {
         {/* Top Section: Interactive Map */}
         <section>
           <ParcelMap
-            coordinates={analysis.coordinates}
+            coordinates={currentCoords}
             areaHa={analysis.area_ha}
             cadastralCode={analysis.cadastral_code}
             onPolygonChange={handlePolygonChange}
