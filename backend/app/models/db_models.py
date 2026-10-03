@@ -32,8 +32,7 @@ class Parcel(Base):
     # Daca PostGIS este instalat se foloseste Geometry(Polygon, 4326), altfel reprezentare text WKT/GeoJSON
     if HAS_GEOALCHEMY:
         geom = Column(Geometry("POLYGON", srid=4326), nullable=True)
-    else:
-        geom_wkt = Column(String, nullable=True)
+    geom_wkt = Column(String, nullable=True)
         
     created_at = Column(DateTime, default=datetime.utcnow)
 
@@ -51,8 +50,7 @@ class SoilProfileRecord(Base):
     
     if HAS_GEOALCHEMY:
         geom = Column(Geometry("MULTIPOLYGON", srid=4326), nullable=True)
-    else:
-        geom_wkt = Column(String, nullable=True)
+    geom_wkt = Column(String, nullable=True)
 
     created_at = Column(DateTime, default=datetime.utcnow)
 
