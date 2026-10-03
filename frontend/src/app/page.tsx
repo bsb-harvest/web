@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { AIChatPanel } from "@/components/AIChatPanel";
 import { CropCardsGrid } from "@/components/CropCardsGrid";
 import { FinancialChart } from "@/components/FinancialChart";
@@ -29,13 +29,13 @@ export default function Home() {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [currentCoords, setCurrentCoords] = useState<number[][]>(DEFAULT_PARCEL_DATA.coordinates);
+  const activeRequestIdRef = useRef<number>(0);
 
   useEffect(() => {
     if (window.location.hash === "#dashboard") {
       window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
       window.scrollTo({ top: 0, behavior: "auto" });
     }
-    handleRunAnalysis();
   }, []);
 
   const handleRunAnalysis = async (
@@ -43,6 +43,7 @@ export default function Home() {
     overrideCoords?: number[][],
     officialAreaHa?: number
   ) => {
+    const currentReqId = ++activeRequestIdRef.current;
     setIsAnalyzing(true);
     const coordsToSend = overrideCoords || currentCoords;
     const targetCadastral = cadastralCode || analysis.cadastral_code || undefined;
@@ -51,6 +52,15 @@ export default function Home() {
         ? officialAreaHa
         : (cadastralCode && cadastralCode === analysis.cadastral_code ? analysis.area_ha : undefined);
 
+    // Actualizare optimistă instantanee (0ms) a stării pentru a preveni orice flicker sau resetare la date vechi
+    setAnalysis((prev) => ({
+      ...prev,
+      cadastral_code: targetCadastral || prev.cadastral_code,
+      area_ha: targetArea && targetArea > 0 ? targetArea : prev.area_ha,
+      coordinates: coordsToSend,
+    }));
+    setCurrentCoords(coordsToSend);
+
     try {
       const result = await analyzeParcel({
         cadastral_code: targetCadastral,
@@ -58,19 +68,25 @@ export default function Home() {
         area_ha: targetArea,
       });
 
+      // Dacă între timp utilizatorul a selectat o altă parcelă, ignorăm răspunsul învechit
+      if (currentReqId !== activeRequestIdRef.current) {
+        return;
+      }
+
       const finalData: ParcelAnalysisResponse = {
         ...result.data,
+        cadastral_code: targetCadastral || result.data.cadastral_code,
         area_ha: targetArea && targetArea > 0 ? targetArea : result.data.area_ha,
+        coordinates: coordsToSend,
       };
 
       setAnalysis(finalData);
-      if (result.data.coordinates && result.data.coordinates.length >= 3) {
-        setCurrentCoords(result.data.coordinates);
-      }
     } catch (error) {
       console.error("Eroare la rularea analizei:", error);
     } finally {
-      setIsAnalyzing(false);
+      if (currentReqId === activeRequestIdRef.current) {
+        setIsAnalyzing(false);
+      }
     }
   };
 

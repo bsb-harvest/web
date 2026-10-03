@@ -84,6 +84,8 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
   const drawPointsRef = useRef<number[][]>([]);
   drawPointsRef.current = drawPoints;
 
+  const isInternalUpdateRef = useRef<boolean>(false);
+
   // Actualizare poligon pe hartă cu noduri de ajustare pe colțuri
   const renderPolygon = useCallback(
     (L: any, coords: number[][], fitBounds: boolean = false) => {
@@ -195,6 +197,7 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
                 ? parcel.area_ha
                 : calculatePolygonAreaHa(parcel.coordinates);
 
+            isInternalUpdateRef.current = true;
             setInputCode(parcel.cadastral_code);
             setCurrentCoords(parcel.coordinates);
             setCalculatedArea(areaToUse);
@@ -249,6 +252,7 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
               ? parcel.area_ha
               : calculatePolygonAreaHa(parcel.coordinates);
 
+          isInternalUpdateRef.current = true;
           setInputCode(parcel.cadastral_code);
           setCurrentCoords(parcel.coordinates);
           setCalculatedArea(areaToUse);
@@ -446,16 +450,23 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
 
   // Sincronizare coordonate din afară
   useEffect(() => {
+    if (isInternalUpdateRef.current) {
+      isInternalUpdateRef.current = false;
+      return;
+    }
     if (coordinates && coordinates.length >= 3) {
       setCurrentCoords(coordinates);
       if (areaHa && areaHa > 0) {
         setCalculatedArea(areaHa);
       }
+      if (cadastralCode) {
+        setInputCode(cadastralCode);
+      }
       if (leafletRef.current && polygonRef.current) {
         renderPolygon(leafletRef.current, coordinates, false);
       }
     }
-  }, [coordinates, areaHa, renderPolygon]);
+  }, [coordinates, areaHa, cadastralCode, renderPolygon]);
 
   // Schimbare strat de bază (Satelit / Străzi)
   const toggleLayer = (layer: "satellite" | "streets") => {
@@ -511,6 +522,7 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
     const closed = [...drawPoints, drawPoints[0]];
     const newArea = calculatePolygonAreaHa(closed);
 
+    isInternalUpdateRef.current = true;
     setCurrentCoords(closed);
     setCalculatedArea(newArea);
     onPolygonChange(closed);
@@ -712,7 +724,7 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
             <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
             <div className="min-w-0">
               <p className="font-bold text-slate-900">Parcela activă</p>
-              <p className="truncate text-xs font-mono font-semibold text-slate-500">#{cadastralCode || inputCode || "Nedefinit"}</p>
+              <p className="truncate text-xs font-mono font-semibold text-slate-500">#{inputCode || cadastralCode || "Nedefinit"}</p>
             </div>
           </div>
           <p className="mt-3 text-3xl font-extrabold tracking-tight text-slate-950">
@@ -720,9 +732,9 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
             <span className="text-sm font-bold text-slate-400">ha</span>
           </p>
           <div className="mt-3 flex items-center justify-between gap-2 border-t border-slate-100 pt-3 text-xs">
-            <span className="truncate text-slate-500">{soilType}</span>
+            <span className="truncate text-slate-500">{isAnalyzing ? "Se analizează solul..." : soilType}</span>
             <span className="shrink-0 rounded-lg bg-emerald-50 px-2 py-1 font-bold text-emerald-700">
-              {soilBonitate}/100
+              {isAnalyzing ? "..." : `${soilBonitate}/100`}
             </span>
           </div>
         </div>
