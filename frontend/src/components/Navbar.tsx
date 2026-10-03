@@ -15,10 +15,22 @@ interface NavbarProps {
 }
 
 export const Navbar: React.FC<NavbarProps> = ({ onOpenChat, onOpenReport }) => {
+  const scrollToTop = (e?: React.MouseEvent) => {
+    if (e) e.preventDefault();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    if (window.location.hash) {
+      window.history.replaceState(null, "", window.location.pathname + window.location.search);
+    }
+  };
+
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/88 shadow-[0_10px_30px_-26px_rgba(15,23,42,0.65)] backdrop-blur-xl">
       <div className="mx-auto flex h-[68px] max-w-[1480px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-        <a href="#dashboard" className="flex shrink-0 items-center gap-2.5">
+        <a
+          href="#"
+          onClick={scrollToTop}
+          className="flex shrink-0 items-center gap-2.5 cursor-pointer"
+        >
           <div className="brand-logo flex h-10 w-10 items-center justify-center rounded-xl bg-white p-0.5 shadow-lg shadow-amber-900/10 ring-4 ring-white/80">
             <img
               src="/agritech-logo.png"
@@ -36,7 +48,14 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenChat, onOpenReport }) => {
         </a>
 
         <nav className="hidden items-center gap-1 rounded-2xl border border-slate-200/80 bg-slate-50/80 p-1 lg:flex" aria-label="Navigație principală">
-          <NavLink href="#dashboard" icon={LayoutDashboard} label="Dashboard" />
+          <button
+            type="button"
+            onClick={scrollToTop}
+            className="inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold text-slate-500 transition hover:bg-white hover:text-emerald-700"
+          >
+            <LayoutDashboard className="h-3.5 w-3.5" />
+            Dashboard
+          </button>
           <NavLink href="#map" icon={Map} label="Harta" />
           <NavLink href="#analysis" icon={BarChart3} label="Analiză" />
           <button

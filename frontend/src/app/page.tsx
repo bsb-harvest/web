@@ -72,7 +72,7 @@ export default function Home() {
       />
 
       <main className="page-content relative z-10 mx-auto w-full max-w-[1480px] space-y-8 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
-        <section id="dashboard" className="hero-section grid items-center gap-8 lg:grid-cols-[1fr_auto]">
+        <section id="dashboard" className="hero-section scroll-mt-28 grid items-center gap-8 lg:grid-cols-[1fr_auto]">
           <div className="relative max-w-3xl">
             <div aria-hidden="true" className="field-lines pointer-events-none absolute -left-10 top-[-7rem] h-72 w-[34rem] opacity-[0.13]" />
             <div className="hero-badge mb-4 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.17em] text-emerald-700 shadow-sm">
