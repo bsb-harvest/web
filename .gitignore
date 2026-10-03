@@ -72,3 +72,9 @@ desktop.ini
 *.geopackage
 postgres_data/
 redis_data/
+
+# Certificate & secrete de conexiune (Aiven CA, chei TLS)
+certs/
+*.pem
+*.key
+*.crt
