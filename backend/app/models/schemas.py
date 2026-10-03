@@ -98,10 +98,17 @@ class ParcelAnalyzeRequest(BaseModel):
     parcel_name: Optional[str] = Field("Parcela mea", description="Denumirea parcelei")
 
 
+class ChatAttachment(BaseModel):
+    name: str = Field(..., description="Numele fișierului încărcat")
+    content_type: str = Field(..., description="MIME type (ex: image/jpeg, image/png, application/pdf)")
+    data_base64: str = Field(..., description="Conținutul fișierului codificat în Base64")
+
+
 class ChatMessageRequest(BaseModel):
     parcel_id: str
     message: str
     context: Optional[dict] = None
+    attachments: Optional[List[ChatAttachment]] = Field(default=None, description="Imagini sau documente atașate (ex: buletin de analiză sol, foto boli)")
 
 
 class ChatMessageResponse(BaseModel):

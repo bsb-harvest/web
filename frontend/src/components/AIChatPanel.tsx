@@ -1,8 +1,18 @@
 "use client";
 
-import React, { useState } from "react";
-import { X, Send, Bot, Sparkles, HelpCircle } from "lucide-react";
-import { ChatMessage, ParcelAnalysisResponse } from "@/lib/types";
+import React, { useState, useRef } from "react";
+import {
+  X,
+  Send,
+  Bot,
+  Sparkles,
+  HelpCircle,
+  Paperclip,
+  FileText,
+  Image as ImageIcon,
+  FlaskConical,
+} from "lucide-react";
+import { ChatMessage, ParcelAnalysisResponse, ChatAttachment } from "@/lib/types";
 import { sendChatMessage } from "@/lib/api";
 import ReactMarkdown from "react-markdown";
 
@@ -21,36 +31,92 @@ export const AIChatPanel: React.FC<AIChatPanelProps> = ({
     {
       id: "init-1",
       sender: "ai",
-      text: `Salut! Sunt Dr. Agro, consultantul tău agronomic AI. Am analizat parcela ta cu suprafața de ${analysis.area_ha.toFixed(1)} ha și profilul de sol ${analysis.soil_profile.type}. Cu ce te pot ajuta legat de tehnologia culturilor, fertilizare sau asolament?`,
+      text: `Salut! Sunt Dr. Agro, consultantul tău agronomic AI. Am analizat parcela ta cu suprafața de ${analysis.area_ha.toFixed(1)} ha și profilul de sol ${analysis.soil_profile.type}. 
+
+Îmi poți pune întrebări despre culturi și fertilizare, sau **îmi poți trimite o fotografie cu frunza/planta ori un buletin de analiză de laborator** (sol, NPK, pH, apă) folosind butonul de atașare 📎. Cu ce începem?`,
       timestamp: "Acum",
     },
   ]);
 
   const [inputValue, setInputValue] = useState("");
+  const [attachments, setAttachments] = useState<ChatAttachment[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!isOpen) return null;
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    Array.from(files).forEach((file) => {
+      if (file.size > 15 * 1024 * 1024) {
+        alert(`Fișierul "${file.name}" depășește limita de 15MB.`);
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        const base64Content = result.split(",")[1];
+        const previewUrl = file.type.startsWith("image/") ? result : undefined;
+
+        setAttachments((prev) => [
+          ...prev,
+          {
+            name: file.name,
+            content_type: file.type || "application/octet-stream",
+            data_base64: base64Content,
+            preview_url: previewUrl,
+            size_kb: Math.round(file.size / 1024),
+          },
+        ]);
+      };
+      reader.readAsDataURL(file);
+    });
+
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const removeAttachment = (index: number) => {
+    setAttachments((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const handleSendMessage = async (textToSend?: string) => {
-    const message = textToSend || inputValue;
-    if (!message.trim() || isLoading) return;
+    const message = textToSend !== undefined ? textToSend : inputValue;
+    if ((!message.trim() && attachments.length === 0) || isLoading) return;
+
+    const currentAttachments = [...attachments];
+    setAttachments([]);
+    setInputValue("");
+    setIsLoading(true);
+
+    const userText =
+      message.trim() ||
+      (currentAttachments.length > 0
+        ? `Vă rog să analizați buletinul / fișierele atașate (${currentAttachments.map((a) => a.name).join(", ")}) și să oferiți concluzii agronomice concrete.`
+        : "");
 
     const userMsg: ChatMessage = {
       id: `user-${Date.now()}`,
       sender: "user",
-      text: message,
+      text: userText,
+      attachments: currentAttachments.length > 0 ? currentAttachments : undefined,
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     };
 
     setMessages((prev) => [...prev, userMsg]);
-    setInputValue("");
-    setIsLoading(true);
 
     try {
-      const reply = await sendChatMessage(analysis.parcel_id, message, {
-        soil_profile: analysis.soil_profile,
-        climate_telemetry: analysis.climate_telemetry,
-      });
+      const reply = await sendChatMessage(
+        analysis.parcel_id,
+        userText,
+        {
+          soil_profile: analysis.soil_profile,
+          climate_telemetry: analysis.climate_telemetry,
+        },
+        currentAttachments
+      );
 
       const aiMsg: ChatMessage = {
         id: `ai-${Date.now()}`,
@@ -60,7 +126,7 @@ export const AIChatPanel: React.FC<AIChatPanelProps> = ({
       };
       setMessages((prev) => [...prev, aiMsg]);
     } catch (err) {
-      console.error(err);
+      console.error("Eroare trimitere mesaj chat:", err);
     } finally {
       setIsLoading(false);
     }
@@ -69,6 +135,7 @@ export const AIChatPanel: React.FC<AIChatPanelProps> = ({
   const QUICK_QUESTIONS = [
     "Ce cantitate de azot (N) recomanzi?",
     "Cum protejez cultura de secetă?",
+    "Interpretare buletin analiză sol",
     "Ce asolament recomanzi pentru anul viitor?",
   ];
 
@@ -85,11 +152,13 @@ export const AIChatPanel: React.FC<AIChatPanelProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-base font-extrabold tracking-tight text-slate-900">Dr. Agro AI</h3>
-                <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-emerald-700">AI</span>
+                <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-emerald-700">
+                  Multimodal 3.8
+                </span>
               </div>
               <p className="mt-0.5 flex items-center gap-1.5 text-xs font-medium text-slate-500">
                 <span className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_0_3px_rgba(16,185,129,0.14)]" />
-                Consultant agronomic activ
+                Suport poze, PDF și analize de laborator
               </p>
             </div>
           </div>
@@ -122,6 +191,44 @@ export const AIChatPanel: React.FC<AIChatPanelProps> = ({
                     : "chat-bubble-ai rounded-bl-md text-slate-800"
                 }`}
               >
+                {/* Render Attachments in User Bubble */}
+                {m.attachments && m.attachments.length > 0 && (
+                  <div className="mb-2 space-y-2">
+                    {m.attachments.map((att, idx) => (
+                      <div key={idx} className="rounded-xl overflow-hidden">
+                        {att.content_type.startsWith("image/") && att.preview_url ? (
+                          <div className="rounded-xl overflow-hidden border border-white/20 bg-black/10">
+                            <img
+                              src={att.preview_url}
+                              alt={att.name}
+                              className="max-h-52 w-auto object-cover rounded-lg cursor-pointer hover:opacity-95 transition"
+                              onClick={() => {
+                                const w = window.open("");
+                                if (w) w.document.write(`<img src="${att.preview_url}" style="max-width:100%" />`);
+                              }}
+                            />
+                            <div className="p-1.5 text-[11px] truncate opacity-90 flex items-center gap-1">
+                              <ImageIcon className="w-3 h-3 shrink-0" />
+                              <span className="truncate">{att.name}</span>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2 rounded-xl bg-white/20 p-2.5 backdrop-blur-xs text-xs">
+                            <FileText className="h-5 w-5 shrink-0" />
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate font-bold">{att.name}</p>
+                              {att.size_kb && (
+                                <p className="text-[10px] opacity-75">{att.size_kb} KB</p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Text Content */}
                 {m.sender === "ai" ? (
                   <div className="space-y-1.5 break-words">
                     <ReactMarkdown
@@ -167,7 +274,12 @@ export const AIChatPanel: React.FC<AIChatPanelProps> = ({
                 ) : (
                   <p className="whitespace-pre-wrap">{m.text}</p>
                 )}
-                <span className={`mt-1.5 block text-right text-[10px] ${m.sender === "user" ? "text-emerald-100" : "text-slate-400"}`}>
+
+                <span
+                  className={`mt-1.5 block text-right text-[10px] ${
+                    m.sender === "user" ? "text-emerald-100" : "text-slate-400"
+                  }`}
+                >
                   {m.timestamp}
                 </span>
               </div>
@@ -181,22 +293,22 @@ export const AIChatPanel: React.FC<AIChatPanelProps> = ({
                 <span className="chat-loading-dot [animation-delay:120ms]" />
                 <span className="chat-loading-dot [animation-delay:240ms]" />
               </div>
-              <span>Dr. Agro formulează recomandarea...</span>
+              <span>Dr. Agro analizează datele și fișierele...</span>
             </div>
           )}
         </div>
 
         {/* Quick Questions */}
-        <div className="chat-quick-section border-t border-slate-100 px-4 py-4 sm:px-6">
+        <div className="chat-quick-section border-t border-slate-100 px-4 py-3 sm:px-6">
           <span className="mb-2 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.13em] text-slate-400">
-            <HelpCircle className="h-3.5 w-3.5 text-emerald-600" /> Întrebări rapide
+            <HelpCircle className="h-3.5 w-3.5 text-emerald-600" /> Recomandări rapide
           </span>
           <div className="flex flex-wrap gap-2">
             {QUICK_QUESTIONS.map((q, idx) => (
               <button
                 key={idx}
                 onClick={() => handleSendMessage(q)}
-                className="chat-quick-button rounded-full border bg-white px-3 py-2 text-left text-[11px] font-medium text-slate-600 transition"
+                className="chat-quick-button rounded-full border bg-white px-3 py-1.5 text-left text-[11px] font-medium text-slate-600 transition hover:border-emerald-300 hover:text-emerald-800"
               >
                 {q}
               </button>
@@ -204,26 +316,84 @@ export const AIChatPanel: React.FC<AIChatPanelProps> = ({
           </div>
         </div>
 
-        {/* Input Bar */}
-        <div className="chat-input-section border-t border-slate-100 px-4 py-4 sm:px-6">
+        {/* Input Bar & Attachment Uploader */}
+        <div className="chat-input-section border-t border-slate-100 px-4 py-3 sm:px-6 bg-slate-50/50">
+          {/* Staged Attachments Preview */}
+          {attachments.length > 0 && (
+            <div className="mb-2 flex flex-wrap gap-2">
+              {attachments.map((att, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50/90 px-3 py-1.5 text-xs text-emerald-900 shadow-xs"
+                >
+                  {att.content_type.startsWith("image/") && att.preview_url ? (
+                    <img
+                      src={att.preview_url}
+                      alt={att.name}
+                      className="h-6 w-6 rounded object-cover border border-emerald-300"
+                    />
+                  ) : (
+                    <FileText className="h-4 w-4 text-emerald-700" />
+                  )}
+                  <span className="max-w-[140px] truncate font-semibold">{att.name}</span>
+                  {att.size_kb && (
+                    <span className="text-[10px] text-emerald-700/80">({att.size_kb} KB)</span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => removeAttachment(idx)}
+                    className="ml-1 rounded-full p-0.5 text-emerald-700 hover:bg-emerald-200"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
           <form
             onSubmit={(e) => {
               e.preventDefault();
               handleSendMessage();
             }}
-            className="chat-input-shell flex items-center gap-2 rounded-2xl border px-2 py-2"
+            className="chat-input-shell flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-2 py-1.5 shadow-sm focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/20"
           >
+            {/* Hidden native file input */}
+            <input
+              type="file"
+              ref={fileInputRef}
+              multiple
+              accept="image/*,application/pdf,.csv,.txt"
+              onChange={handleFileSelect}
+              className="hidden"
+            />
+
+            {/* Paperclip Button for Attachments */}
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              title="Atașează buletin de analiză de laborator (PDF/Imagine) sau foto cultură"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-200 text-slate-500 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700 transition"
+            >
+              <Paperclip className="h-4 w-4" />
+            </button>
+
             <input
               type="text"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              placeholder="Întreabă despre parcelă, soiuri, riscuri..."
-              className="flex-1 bg-transparent px-2.5 py-2 text-sm text-slate-800 outline-none placeholder:text-slate-400"
+              placeholder={
+                attachments.length > 0
+                  ? "Adaugă un mesaj sau trimite pentru interpretare..."
+                  : "Întreabă sau atașează analiză laborator / foto..."
+              }
+              className="flex-1 bg-transparent px-2 py-1.5 text-sm text-slate-800 outline-none placeholder:text-slate-400"
             />
+
             <button
               type="submit"
-              disabled={isLoading || !inputValue.trim()}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-lg shadow-emerald-700/20 transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-40"
+              disabled={isLoading || (!inputValue.trim() && attachments.length === 0)}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-md shadow-emerald-700/20 transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-40"
             >
               <Send className="h-4 w-4" />
             </button>

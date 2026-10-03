@@ -78,11 +78,12 @@ export async function sendChatMessage(
   context?: {
     soil_profile?: SoilProfile;
     climate_telemetry?: ClimateTelemetry;
-  }
+  },
+  attachments?: import("./types").ChatAttachment[]
 ): Promise<string> {
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 12000);
+    const timeoutId = setTimeout(() => controller.abort(), 20000);
 
     const res = await fetch(`${API_BASE_URL}/api/v1/chat/`, {
       method: "POST",
@@ -93,6 +94,7 @@ export async function sendChatMessage(
         parcel_id: parcelId,
         message,
         context,
+        attachments: attachments && attachments.length > 0 ? attachments : undefined,
       }),
       signal: controller.signal,
     });

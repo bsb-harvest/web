@@ -18,5 +18,6 @@ async def chat_with_advisor(request: ChatMessageRequest):
     return process_farmer_chat(
         parcel_id=request.parcel_id,
         user_message=request.message,
-        parcel_context=request.context
+        parcel_context=request.context,
+        attachments=request.attachments,
     )

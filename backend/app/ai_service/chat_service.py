@@ -1,22 +1,29 @@
 """
 Serviciul de asistență conversațională cu fermierul (Chat Panel).
 Responsabilitate: Persoana 5 (AI & LLM Integration Engineer)
-Task 5.4: Răspunsuri la întrebările fermierului despre parcela curentă.
+Task 5.4: Răspunsuri la întrebările fermierului despre parcela curentă,
+inclusiv analiză multimodală pentru imagini și fișiere (buletine analize sol/frunze).
 """
 
+import base64
+import logging
 from typing import Dict, Any, List, Optional
-from app.models.schemas import ChatMessageResponse
+from app.models.schemas import ChatMessageResponse, ChatAttachment
 from app.ai_service.gemini_client import ai_service
 from app.ai_service.prompt_builder import SYSTEM_AGRONOMIC_PROMPT
+
+logger = logging.getLogger(__name__)
 
 
 def process_farmer_chat(
     parcel_id: str,
     user_message: str,
-    parcel_context: Optional[Dict[str, Any]] = None
+    parcel_context: Optional[Dict[str, Any]] = None,
+    attachments: Optional[List[ChatAttachment]] = None,
 ) -> ChatMessageResponse:
     """
-    Răspunde interactiv la întrebările fermierului având în context datele parcelei.
+    Răspunde interactiv la întrebările fermierului având în context datele parcelei,
+    precum și eventuale imagini sau fișiere încărcate (analize de laborator, foto culturi).
     """
     context_summary = ""
     if parcel_context:
@@ -38,25 +45,78 @@ def process_farmer_chat(
     client = ai_service.get_client()
     if client:
         try:
-            full_prompt = f"{context_summary}\n\nÎntrebarea fermierului: {user_message}\n\nRăspunde scurt, la obiect, pe înțelesul unui agricultor."
+            from google.genai import types
+
+            contents_list: List[Any] = []
+            files_annotation = ""
+
+            # Procesare fișiere atașate (imagini, PDF-uri, texte de laborator)
+            if attachments:
+                files_annotation = "\n[Fișiere atașate de fermier]:\n"
+                for att in attachments:
+                    try:
+                        raw_data = base64.b64decode(att.data_base64)
+                        ctype = (att.content_type or "").lower()
+
+                        if ctype.startswith("image/") or ctype == "application/pdf":
+                            part = types.Part.from_bytes(data=raw_data, mime_type=ctype)
+                            contents_list.append(part)
+                            files_annotation += f"- Atașament vizual/document: '{att.name}' ({ctype})\n"
+                        elif "text" in ctype or "csv" in ctype or att.name.endswith((".csv", ".txt")):
+                            text_body = raw_data.decode("utf-8", errors="ignore")
+                            files_annotation += f"- Document text '{att.name}':\n```\n{text_body[:4000]}\n```\n"
+                    except Exception as parse_err:
+                        logger.warning(f"Nu s-a putut decoda atașamentul '{att.name}': {parse_err}")
+
+            multimodal_instructions = (
+                "\n\nInstrucțiuni agronomice speciale pentru fișiere atașate:\n"
+                "Dacă fermierul a trimis o imagine a unui buletin de analiză de laborator (sol, apă, țesut vegetal/frunză):\n"
+                "1. Extrage cu acuratețe parametrii cheie detectați (pH, humus/materie organică %, NPK - Azot, Fosfor mobil P2O5, Potasiu K2O, microelemente etc.).\n"
+                "2. Evaluează nivelul fiecărui parametru (foarte scăzut, optim, excesiv) în contextul solurilor din Republica Moldova.\n"
+                "3. Formulează un plan concret de fertilizare sau corectare pas cu pas.\n"
+                "Dacă fermierul a trimis o fotografie cu frunze sau culturi, identifică posibilele simptome de boli fungice/bacteriene, deficiențe nutriționale sau atac de dăunători."
+            )
+
+            full_prompt = (
+                f"{context_summary}\n"
+                f"{files_annotation}\n"
+                f"Mesajul fermierului: {user_message}\n"
+                f"{multimodal_instructions}\n\n"
+                f"Răspunde structurat, clar și profesionist, pe înțelesul unui agricultor practicant."
+            )
+
+            contents_list.append(full_prompt)
+
             response = client.models.generate_content(
                 model=ai_service.model_name,
-                contents=full_prompt,
+                contents=contents_list,
                 config={
                     "system_instruction": SYSTEM_AGRONOMIC_PROMPT,
-                    "temperature": 0.4
+                    "temperature": 0.4,
                 }
             )
             if response.text:
+                if attachments and not user_message.strip():
+                    suggested = [
+                        "Ce plan de fertilizare recomandat reiese din acest buletin?",
+                        "Este necesară amendarea cu var sau gips a acestui sol?",
+                        "Ce culturi valorifică cel mai bine acești parametri pedologici?"
+                    ]
                 return ChatMessageResponse(reply=response.text, suggested_questions=suggested)
         except Exception as e:
-            import logging
-            logging.getLogger(__name__).error(f"Eroare Gemini Chat API: {e}", exc_info=True)
+            logger.error(f"Eroare Gemini Chat Multimodal API: {e}", exc_info=True)
     else:
-        import logging
-        logging.getLogger(__name__).warning("Gemini Client este None în chat_service!")
+        logger.warning("Gemini Client este None în chat_service!")
 
     # Răspuns ghidat local inteligent (pentru dezvoltare fără cheie API)
+    if attachments:
+        reply = (
+            f"Am recepționat {len(attachments)} fișier(e) atașat(e) ({', '.join(a.name for a in attachments)}). "
+            f"În modul live cu Google Gemini conectat, valorile din buletinul de analiză de laborator sau fotografiile culturii "
+            f"vor fi interpretate automat pentru parcela {parcel_id}."
+        )
+        return ChatMessageResponse(reply=reply, suggested_questions=suggested)
+
     msg_lower = user_message.lower()
     if "azot" in msg_lower or "ingrasamant" in msg_lower or "fertiliz" in msg_lower:
         reply = (

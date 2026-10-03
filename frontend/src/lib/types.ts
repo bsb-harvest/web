@@ -68,17 +68,27 @@ export interface ParcelAnalyzeRequest {
   parcel_name?: string;
 }
 
+export interface ChatAttachment {
+  name: string;
+  content_type: string;
+  data_base64: string;
+  preview_url?: string;
+  size_kb?: number;
+}
+
 export interface ChatMessage {
   id: string;
   sender: "ai" | "user";
   text: string;
   timestamp: string;
+  attachments?: ChatAttachment[];
 }
 
 export interface ChatMessageRequest {
   parcel_id: string;
   message: string;
   context?: Record<string, unknown>;
+  attachments?: ChatAttachment[];
 }
 
 export interface ChatMessageResponse {
