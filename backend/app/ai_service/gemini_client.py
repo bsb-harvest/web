@@ -4,6 +4,7 @@ Responsabilitate: Persoana 5 (AI & LLM Integration Engineer)
 Task 5.1: Generare răspuns structurat garantat conform AIGuidance.
 """
 
+import os
 import json
 import logging
 from typing import List, Optional
