@@ -21,6 +21,12 @@ class Settings(BaseSettings):
     # Database
     DATABASE_URL: str = "postgresql+asyncpg://agritech:agritech_secret@localhost:5432/agritech_db"
 
+
+    DB_SSL_CA_PATH: str = ""
+
+    DB_POOL_SIZE: int = 3
+    DB_MAX_OVERFLOW: int = 0
+
     # Redis
     REDIS_URL: str = "redis://localhost:6379/0"
 
