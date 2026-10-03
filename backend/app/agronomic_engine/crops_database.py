@@ -16,6 +16,30 @@ from typing import Dict, List
 from pydantic import BaseModel, Field
 
 
+class SourceRef(BaseModel):
+    """Proveniența unei valori economice (cost sau preț de piață)."""
+    source: str = Field(..., description="Sursa valorii (document, bursă, fișă tehnologică)")
+    verified: bool = Field(False, description="True doar dacă valoarea provine dintr-o sursă oficială verificată")
+
+
+# Sursa implicită: toate valorile economice sunt deocamdată estimări neverificate (verified=False).
+# Pe măsură ce sosesc date reale, se suprascrie per-categorie cu verified=True.
+_ESTIMATE_COST_SOURCE = "Estimare P4 pe baza fișelor tehnologice agricole MD (2024)"
+_ESTIMATE_PRICE_SOURCE = "Preț mediu orientativ piața agricolă MD (2024)"
+
+
+def _default_references() -> Dict[str, SourceRef]:
+    """Proveniența implicită pentru fiecare categorie de cost și pentru prețul de piață."""
+    return {
+        "seeds": SourceRef(source=_ESTIMATE_COST_SOURCE, verified=False),
+        "fertilizers": SourceRef(source=_ESTIMATE_COST_SOURCE, verified=False),
+        "fuel": SourceRef(source=_ESTIMATE_COST_SOURCE, verified=False),
+        "pesticides": SourceRef(source=_ESTIMATE_COST_SOURCE, verified=False),
+        "mechanized": SourceRef(source=_ESTIMATE_COST_SOURCE, verified=False),
+        "market_price": SourceRef(source=_ESTIMATE_PRICE_SOURCE, verified=False),
+    }
+
+
 class CropProfile(BaseModel):
     name: str
     latin_name: str
@@ -48,6 +72,13 @@ class CropProfile(BaseModel):
     )
     kc_mid: float = Field(..., description="Coeficient de cultură mijloc de sezon, Kc mid (FAO-56, Tab. 12)")
     ky: float = Field(..., description="Factor de răspuns al producției la deficit hidric, Ky (FAO-33)")
+
+    # Proveniența valorilor economice: sursă + flag verified pentru fiecare cost și pentru prețul de piață (Task 4.3).
+    # Implicit toate sunt estimări (verified=False); se suprascriu per-categorie când există date verificate.
+    references: Dict[str, SourceRef] = Field(
+        default_factory=_default_references,
+        description="Sursa și flag-ul verified pentru fiecare categorie de cost și pentru prețul de piață",
+    )
 
 
 # Catalogul celor 6 culturi cheie din Moldova
