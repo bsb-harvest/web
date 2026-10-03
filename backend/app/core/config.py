@@ -18,22 +18,22 @@ class Settings(BaseSettings):
         "http://localhost:8000",
     ]
 
-    # Database
-    DATABASE_URL: str = "postgresql+asyncpg://agritech:agritech_secret@localhost:5432/agritech_db"
+    # Database (Aiven Cloud PostgreSQL 16+ with PostGIS)
+    DATABASE_URL: str = "postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}?sslmode=require"
 
     # Redis
     REDIS_URL: str = "redis://localhost:6379/0"
 
     # Google Gemini AI
     GEMINI_API_KEY: str = ""
-    GEMINI_MODEL: str = "gemini-2.5-flash"
+    GEMINI_MODEL: str = "gemini-3.8-flash"
 
     # External Data Services
     SOLURI_WFS_ENDPOINT: str = "https://soluri.gov.md/geoserver/wfs"
     AGRODAT_API_ENDPOINT: str = "https://agrodat.md/api/v1"
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=(".env", "../.env"),
         env_file_encoding="utf-8",
         case_sensitive=True,
         extra="ignore"
