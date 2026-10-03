@@ -35,10 +35,11 @@ def process_farmer_chat(
     ]
 
     # Dacă Gemini API este conectat:
-    if ai_service._client:
+    client = ai_service.get_client()
+    if client:
         try:
             full_prompt = f"{context_summary}\n\nÎntrebarea fermierului: {user_message}\n\nRăspunde scurt, la obiect, pe înțelesul unui agricultor."
-            response = ai_service._client.models.generate_content(
+            response = client.models.generate_content(
                 model=ai_service.model_name,
                 contents=full_prompt,
                 config={
@@ -48,8 +49,12 @@ def process_farmer_chat(
             )
             if response.text:
                 return ChatMessageResponse(reply=response.text, suggested_questions=suggested)
-        except Exception:
-            pass
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).error(f"Eroare Gemini Chat API: {e}", exc_info=True)
+    else:
+        import logging
+        logging.getLogger(__name__).warning("Gemini Client este None în chat_service!")
 
     # Răspuns ghidat local inteligent (pentru dezvoltare fără cheie API)
     msg_lower = user_message.lower()
