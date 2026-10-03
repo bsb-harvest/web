@@ -57,8 +57,12 @@ def test_yield_calculator(sample_soil, sample_climate):
     crop = CROPS_DATABASE["Grau de toamna"]
     yield_est = calculate_crop_yield(crop, sample_soil, sample_climate)
     assert yield_est.min_t_ha > 0.5
+    # Semantica noua (Task 4.2): min = scenariu an secetos, max = scenariu an optim
     assert yield_est.max_t_ha > yield_est.min_t_ha
-    assert 3.0 <= yield_est.min_t_ha <= 6.5
+    # Anul secetos (precipitatii x0.5, ETo x1.2) reduce semnificativ productia de grau
+    assert 1.0 <= yield_est.min_t_ha <= 3.5
+    # Anul optim (fara deficit hidric/termic) ramane in banda realista pentru grau de toamna
+    assert 4.0 <= yield_est.max_t_ha <= 6.5
 
 
 def test_financial_engine_profit_calculation(sample_soil, sample_climate):
