@@ -9,7 +9,7 @@ from app.models.schemas import SoilProfile, ClimateTelemetry
 from app.agronomic_engine.crops_database import CROPS_DATABASE
 from app.agronomic_engine.suitability import calculate_suitability_score
 from app.agronomic_engine.yield_calculator import calculate_crop_yield
-from app.agronomic_engine.financial_engine import calculate_crop_finances
+from app.agronomic_engine.financial_engine import calculate_crop_finances, calculate_crop_financials
 from app.agronomic_engine.calculator import calculate_crop_economics
 
 
@@ -92,6 +92,29 @@ def test_calculate_crop_economics_strict_sort_order(sample_soil, sample_climate)
     results = calculate_crop_economics(sample_soil, sample_climate)
     keys = [(r.suitability_score, r.net_profit_mdl_ha) for r in results]
     assert keys == sorted(keys, reverse=True)
+
+
+def test_calculate_crop_economics_populates_financial_fields(sample_soil, sample_climate):
+    results = calculate_crop_economics(sample_soil, sample_climate)
+    for rc in results:
+        assert rc.break_even_yield_t_ha is not None
+        assert rc.net_profit_min_mdl_ha is not None
+        assert rc.net_profit_max_mdl_ha is not None
+        assert rc.margin_min_pct is not None
+        assert rc.margin_max_pct is not None
+        # profitul mediu expus trebuie sa fie intre scenariul minim si maxim
+        assert rc.net_profit_min_mdl_ha <= rc.net_profit_mdl_ha <= rc.net_profit_max_mdl_ha
+
+    # coerenta cu financiarul calculat direct, pentru o cultura
+    crop = CROPS_DATABASE["Floarea-soarelui"]
+    y = calculate_crop_yield(crop, sample_soil, sample_climate)
+    fin = calculate_crop_financials(crop, sample_soil, sample_climate, y)
+    fs = next(r for r in results if r.crop_name == "Floarea-soarelui")
+    assert fs.break_even_yield_t_ha == fin.break_even_yield_t_ha
+    assert fs.net_profit_min_mdl_ha == fin.net_profit_min_mdl_ha
+    assert fs.net_profit_max_mdl_ha == fin.net_profit_max_mdl_ha
+    assert fs.margin_min_pct == fin.margin_min_pct
+    assert fs.margin_max_pct == fin.margin_max_pct
 
 
 def test_calculate_crop_economics_selected_crops_by_name(sample_soil, sample_climate):

@@ -54,6 +54,11 @@ class RecommendedCrop(BaseModel):
     estimated_revenue_mdl_ha: float = Field(..., description="Venit brut estimat (MDL/ha)")
     net_profit_mdl_ha: float = Field(..., description="Profit net estimat (MDL/ha)")
     cost_breakdown: Optional[ProductionCostBreakdown] = Field(None, description="Detalierea costurilor")
+    break_even_yield_t_ha: Optional[float] = Field(None, description="Prag de rentabilitate: recolta (t/ha) care acoperă costurile totale")
+    net_profit_min_mdl_ha: Optional[float] = Field(None, description="Profit net pe scenariul de recoltă minimă (MDL/ha)")
+    net_profit_max_mdl_ha: Optional[float] = Field(None, description="Profit net pe scenariul de recoltă maximă (MDL/ha)")
+    margin_min_pct: Optional[float] = Field(None, description="Marja netă (%) pe scenariul de recoltă minimă")
+    margin_max_pct: Optional[float] = Field(None, description="Marja netă (%) pe scenariul de recoltă maximă")
 
 
 class AIGuidance(BaseModel):
