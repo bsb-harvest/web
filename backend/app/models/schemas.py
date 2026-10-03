@@ -71,6 +71,14 @@ class ParcelAnalysisResponse(BaseModel):
     climate_telemetry: ClimateTelemetry
     recommended_crops: List[RecommendedCrop]
     ai_guidance: AIGuidance
+    warnings: List[str] = Field(
+        default_factory=list,
+        description=(
+            "Avertismente privind calitatea datelor: stație meteo îndepărtată, "
+            "acoperire pedologică parțială, telemetrie veche sau valori estimate. "
+            "Câmp opțional — lista goală înseamnă date complete."
+        ),
+    )
 
 
 class ParcelAnalyzeRequest(BaseModel):
