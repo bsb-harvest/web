@@ -21,6 +21,7 @@ interface ParcelMapProps {
   soilBonitate?: number;
   soilType?: string;
   onPolygonChange: (coords: number[][]) => void;
+  onAreaChange?: (areaHa: number) => void;
   onAnalyze: (cadastralCode?: string, overrideCoords?: number[][], officialAreaHa?: number) => void;
   isAnalyzing: boolean;
 }
@@ -50,6 +51,7 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
   soilBonitate = 84,
   soilType = "Cernoziom levigat și tipic lutos",
   onPolygonChange,
+  onAreaChange,
   onAnalyze,
   isAnalyzing,
 }) => {
@@ -142,6 +144,17 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
               const pos = e.target.getLatLng();
               working[idx] = [pos.lat, pos.lng];
               polygonRef.current.setLatLngs(working as any);
+
+              // Recalculare instantanee (live) a ariei pe măsură ce utilizatorul trage de colț
+              const liveCoords = working.map((pt: any) => [
+                Number(pt[1]),
+                Number(pt[0]),
+              ]);
+              const liveArea = calculatePolygonAreaHa(liveCoords);
+              setCalculatedArea(liveArea);
+              if (onAreaChange) {
+                onAreaChange(liveArea);
+              }
             });
 
             marker.on("dragend", () => {
@@ -152,6 +165,9 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
               setCurrentCoords(newCoords);
               const newArea = calculatePolygonAreaHa(newCoords);
               setCalculatedArea(newArea);
+              if (onAreaChange) {
+                onAreaChange(newArea);
+              }
               onPolygonChange(newCoords);
               renderPolygon(L, newCoords, false);
             });

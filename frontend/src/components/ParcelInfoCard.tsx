@@ -275,7 +275,7 @@ export const ParcelInfoCard: React.FC<ParcelInfoCardProps> = ({
             <div>
               <h4 className="text-xs font-extrabold uppercase tracking-[0.14em] text-emerald-900 flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5 text-emerald-700" />
-                Recomandarea asistentului AI (Google Gemini &bull; Model Hibrid)
+                Recomandarea asistentului AI
               </h4>
               <p className="text-sm text-slate-700 mt-1 leading-relaxed">
                 {aiGuidance.summary}

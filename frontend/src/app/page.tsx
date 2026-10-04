@@ -231,6 +231,7 @@ export default function Home() {
             soilBonitate={analysis.soil_profile.bonitate_points}
             soilType={analysis.soil_profile.type}
             onPolygonChange={setCurrentCoords}
+            onAreaChange={(newArea) => setAnalysis((prev) => ({ ...prev, area_ha: newArea }))}
             onAnalyze={handleRunAnalysis}
             isAnalyzing={isAnalyzing}
           />
