@@ -1,15 +1,28 @@
 # 🌱 AgriTech AI Guidance Moldova
 
-Un asistent agronomic și economic inteligent dedicat agricultorilor din Republica Moldova, creat pentru optimizarea selecției culturilor, prognoza deterministă a producției (t/ha), calculul devizului detaliat de costuri și maximizarea profitabilității prin integrarea datelor locale de pe **`soluri.gov.md`**, **`agrodat.md`** și a modelului **Google Gemini**.
+Un asistent agronomic și economic inteligent dedicat agricultorilor din Republica Moldova, creat pentru optimizarea selecției culturilor, prognoza deterministă a producției (t/ha), calculul devizului detaliat de costuri și maximizarea profitabilității prin integrarea datelor oficiale de pe **`soluri.gov.md`**, a datelor de telemetrie de pe **`agrodat.md`**, bazei de date **PostgreSQL + PostGIS pe Aiven Cloud** și a modelului **Google Gemini 3.8 Flash**.
 
 ---
 
 ## 🎯 Obiectivele Platformei
 
-* **Alegerea Culturii Optime:** Corelarea automată a tipului de sol și a climei locale cu cerințele biologice ale plantelor.
-* **Predicția Deterministă a Recoltei (t/ha):** Calcul bazat pe nota de bonitate a solului și rezerva utilă de apă (fără halucinații AI).
-* **Bilanț Financiar Transparent:** Calculul investiției per hectar (semințe, motorină, îngrășăminte NPK, pesticide, lucrări mecanizate) vs. venituri la prețurile pieței din Republica Moldova (MDL/ha).
-* **Consultant Agronomic AI (Google Gemini):** Sinteză contextualizată, avertizări timpurii privind bolile fungice (mană, fuzarioză) și asolament pe 4 ani.
+* **Alegerea Culturii Optime:** Corelarea automată a tipului de sol (cernoziomuri, soluri cenușii, aluviale) și a climei locale cu cerințele biologice ale plantelor.
+* **Predicția Deterministă a Recoltei (t/ha):** Calcul matematic robust bazat pe nota de bonitate a solului și rezerva utilă de apă (fără halucinații AI).
+* **Bilanț Financiar Transparent (MDL):**
+  * Comutator dinamic **Per Hectar (MDL/ha)** vs. **Total Parcelă (MDL)**.
+  * Estimare costuri pe categorii: semințe, motorină, îngrășăminte NPK, pesticide, lucrări mecanizate.
+  * Prețuri curente de piață din Republica Moldova per tonă.
+  * Scenarii comparative de profit: **Pesimist (-15%)**, **Realist**, **Optimist (+15%)**.
+  * Comutator flexibil de sortare a culturilor: după **Potrivire Ecologică** sau după **Profit Net Estimativ**.
+* **Interacțiune GIS & Cadastru Oficial:**
+  * Hartă satelitară interactivă centrată curat pe Republica Moldova (zoom automat fără suprapuneri artificiale).
+  * Integrare directă cu cadastrul oficial și straturile WMS oficiale (`soluri.gov.md`).
+  * Preluarea prioritară a suprafeței cadastrale oficial înregistrate (eliminând discrepanțele poligoanelor geometrice).
+* **Consultant Agronomic AI Multimodal (Google Gemini 3.8 Flash):**
+  * Sinteză contextualizată pe baza datelor exacte din sol și meteo.
+  * Suport pentru **fișiere atașate multimodale** (fotografii din teren, buletine de analiză de sol, fișiere PDF/scanate).
+  * Formatare Markdown completă a răspunsurilor (liste, tabele, avertismente, pași agrotehnici).
+  * Avertizări fitosanitare automate (riscuri de mană, fuzarioză) și recomandări de asolament pe 4 ani.
 
 ---
 
@@ -17,164 +30,190 @@ Un asistent agronomic și economic inteligent dedicat agricultorilor din Republi
 
 > [!IMPORTANT]
 > **Regula de Aur a Sistemului:**
-> Inteligența Artificială (LLM) **NU** calculează direct banii sau recolta.
-> **Backend-ul calculează matematic cifrele exacte**, iar **Google Gemini** acționează ca un consultant agronomic de elită care interpretează rezultatele și ghidează fermierul în limbaj natural.
+> Inteligența Artificială (LLM) **NU** inventează cifrele economice sau randamentele.
+> **Backend-ul calculează determinist cifrele exacte**, iar **Google Gemini** acționează ca un consultant agronomic de elită care interpretează rezultatele, explică deciziile și răspunde întrebărilor fermierului.
 
 ```
                     +------------------------------------+
                     |        DATE PARCELĂ FERMIER        |
+                    | (Hartă GIS / Cadastru Oficial / WMS)|
                     +-----------------+------------------+
                                       |
                                       v
 +--------------------------------------------------------------------------+
-|                  MOTORUL DETERMINIST (Persoana 4)                        |
+|                  MOTORUL DETERMINIST & FINANCIAR                         |
 | * Recoltă (t/ha) = Bonitate * Coef_Umiditate * Factor_Soi * Eroziune     |
-| * Cost (MDL/ha) = Semințe + NPK + Motorină + Tratamente + Mecanizare     |
-| * Profit Net (MDL/ha) = (Recoltă * Preț_Piață_MDL) - Costuri_Totale     |
+| * Cost (MDL) = Semințe + NPK + Motorină + Tratamente + Mecanizare        |
+| * Venit (MDL) = Recoltă * Preț_Piață_Moldova                             |
+| * Profit Net (MDL) = Venit - Costuri_Totale (Scenarii Min / Med / Max)   |
+| * Sortare dinamică: Recomandare ecologică vs. Profitabilitate            |
 +--------------------------------------------------------------------------+
                                       |
-                                      v [Date Structurate JSON]
+                                      v [Date Structurate JSON + Atașamente]
 +--------------------------------------------------------------------------+
-|                  STRATUL COGNITIV (Persoana 5 - Gemini)                  |
+|             STRATUL COGNITIV MULTIMODAL (Gemini 3.8 Flash)               |
 | * Sinteză agronomică clară pe înțelesul agricultorului                   |
-| * Avertizări fitosanitare (ore umiditate pe frunză > 6h -> risc mană)    |
+| * Analiză fotografii sol / frunze / buletine de laborator PDF            |
+| * Avertizări fitosanitare (ore umiditate frunză, temperatură sol)        |
 | * Recomandări de asolament și măsuri agrotehnice corective               |
 +--------------------------------------------------------------------------+
 ```
 
 ---
 
-## 👥 Repartizarea Echipei pe 5 Roluri (Zero-Blocking)
+## 🚀 Funcționalități Recente Implementate
 
-| Rol | Persoană | Director Alocat | Tehnologii |
+1. **Finanțe Avansate & Calcule Dinamice:**
+   - Comutator instant între **Per Hectar (MDL/ha)** și **Total Parcelă (MDL)** pentru toată suprafața selectată.
+   - Afișarea prețului de piață curent al fiecărei culturi (ex: Rapiță ~9,200 MDL/t, Grâu ~3,800 MDL/t, Floarea-soarelui ~8,500 MDL/t).
+   - Scenarii de rentabilitate minimă și maximă pentru fiecare cultură.
+   - Selector de sortare în grilă: **Potrivire agrometeorologică** sau **Profit maxim estimat**.
+   - Sortare descrescătoare a graficului financiar pentru comparabilitate vizuală directă.
+
+2. **Cartografiere GIS & Cadastru de Precizie:**
+   - Eliminarea poligoanelor fictive predefinite; harta se deschide curat centrată pe Republica Moldova.
+   - Preluarea suprafeței oficiale din registrul cadastral (ex: recunoașterea fidelă a parcelelor de 337.41 ha).
+   - Rezolvarea problemelor de flicker sau curse asincrone la selecția parcelelor dinamic.
+   - Conector oficial WMS către `soluri.gov.md` pentru identificarea straturilor pedologice.
+
+3. **Asistent AI Dr. Agro Multimodal:**
+   - Integrare **Google Gemini 3.8 Flash**.
+   - Suport complet pentru upload fișiere: imagini din câmp (plante bolnave, dăunători), analize agrochimice și rapoarte PDF.
+   - Redare îmbunătățită cu Markdown bogat, tabele agronomice și atenționări structurate.
+
+4. **Securizare & Curățare Istoric Git:**
+   - Izolarea totală a credențialelor bazei de date și a cheilor API prin variabile de mediu (`.env`).
+   - Audit complet de securitate și curățare prin rescriere de istoric fără expunere de secrete în commituri.
+
+---
+
+## 👥 Repartizarea Echipei pe 5 Roluri
+
+| Rol | Persoană / Modul | Director Alocat | Tehnologii |
 | :--- | :--- | :--- | :--- |
-| **Persoana 1** | Frontend & GIS Developer | `frontend/` | Next.js, React, TailwindCSS, Leaflet, Lucide Icons, PWA |
-| **Persoana 2** | Backend Core & Database | `backend/app/api/`, `db/` | Python 3.11+, FastAPI, PostgreSQL + PostGIS, Docker |
-| **Persoana 3** | Data Engineer & Ingestie | `backend/app/data_pipeline/` | GeoPandas, Shapely, Requests, APScheduler, agrodat.md & soluri.gov.md |
+| **Persoana 1** | Frontend & GIS Developer | `frontend/` | Next.js 16+, React 19, TailwindCSS, Leaflet, Lucide Icons |
+| **Persoana 2** | Backend Core & Database | `backend/app/api/`, `db/` | FastAPI, PostgreSQL 16 + PostGIS pe Aiven Cloud, SQLAlchemy Async, asyncpg |
+| **Persoana 3** | Data Pipeline & Ingestie | `backend/app/data_pipeline/` | Shapely, Requests, APScheduler, WMS soluri.gov.md & agrodat.md |
 | **Persoana 4** | Agronomie & Finanțe | `backend/app/agronomic_engine/` | Formule deterministe de bonitate, randament și marjă MDL/ha, PyTest |
-| **Persoana 5** | AI & Rapoarte Executive | `backend/app/ai_service/` | Google Gemini API (`google-genai`), Detecție Boli, Export Raport PDF |
+| **Persoana 5** | AI & Rapoarte Executive | `backend/app/ai_service/` | Google Gemini 3.8 Flash (`google-genai`), Multimodal Chat, Diagnostic Fitosanitar |
 
 ---
 
-## ⚡ Integrare în JetBrains IDE (PyCharm / WebStorm / IDEA)
+## ⚙️ Variabile de Mediu (`.env`)
 
-Proiectul este pre-configurat cu **Run Configurations (1-Click)** în folderul `.idea/runConfigurations/`:
+Pentru rulare locală sau în producție, creați fișierele de configurare pornind de la template-urile `.env.example`:
 
-1. **`Run Backend (FastAPI)`**: Pornește serverul FastAPI pe `http://localhost:8000` (cu documentație Swagger pe `/docs`).
-2. **`Run Frontend (Next.js)`**: Pornește interfața web pe `http://localhost:3000`.
-3. **`Run Pytest (Agronomic & API Tests)`**: Execută suita completă de teste unitare cu 100% rată de succes.
-4. **`Run Data Pipeline (Worker)`**: Sincronizează datele meteorologice de la stațiile din Moldova.
+### Backend (`backend/.env`):
+```env
+# Google Gemini API
+GEMINI_API_KEY=your-gemini-api-key
+GEMINI_MODEL=gemini-3.8-flash
+
+# Setări Aplicație
+APP_ENV=development
+API_HOST=0.0.0.0
+API_PORT=8000
+DEBUG=True
+CORS_ORIGINS=["http://localhost:3000","http://127.0.0.1:3000"]
+
+# Conexiune Bază de Date (PostgreSQL / PostGIS)
+POSTGRES_USER=your_db_user
+POSTGRES_PASSWORD=your_db_password
+POSTGRES_DB=defaultdb
+POSTGRES_HOST=your_db_host
+POSTGRES_PORT=5432
+DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}?sslmode=require
+
+# External Data Services
+SOLURI_WFS_ENDPOINT=https://soluri.gov.md/geoserver/wfs
+AGRODAT_API_ENDPOINT=https://agrodat.md/api/v1
+```
+
+### Frontend (`frontend/.env.local`):
+```env
+NEXT_PUBLIC_API_URL=http://localhost:8000
+NEXT_PUBLIC_MAP_DEFAULT_LAT=47.0105
+NEXT_PUBLIC_MAP_DEFAULT_LNG=28.8350
+NEXT_PUBLIC_MAP_DEFAULT_ZOOM=8
+```
 
 ---
 
-## 🚀 Ghid Rapid de Pornire din Terminal
+## 🚀 Ghid Rapid de Rulare
 
 ### 1. Pornire Backend (FastAPI)
 ```bash
 cd backend
 
-# Activare mediu virtual pre-creat
-.\venv\Scripts\activate      # Windows
+# Instalare dependențe
+pip install -r requirements.txt
 
-# Rulare teste unitare
+# Rulare teste unitare agronomice
 pytest -v tests
 
 # Pornire server API
 uvicorn app.main:app --reload --port 8000
 ```
-* API Documentation: [http://localhost:8000/docs](http://localhost:8000/docs)
-* Mock Contract Day 1: [http://localhost:8000/api/v1/mock/contract](http://localhost:8000/api/v1/mock/contract)
+* Swagger UI Docs: [http://localhost:8000/docs](http://localhost:8000/docs)
 
 ### 2. Pornire Frontend (Next.js)
 ```bash
 cd frontend
 
+# Instalare dependențe
+npm install
+
+# Build verificare integritate
+npm run build
+
 # Pornire server de dezvoltare
 npm run dev
 ```
-* Interfață Utilizator: [http://localhost:3000](http://localhost:3000)
+* Aplicație Web: [http://localhost:3000](http://localhost:3000)
 
-### 3. Pornire cu Docker Compose (Opțional)
+### 3. Rulare cu Docker Compose
 ```bash
-# Ridică PostGIS + Redis + Backend + Frontend
-docker compose up -d
+docker compose up --build -d
 ```
 
 ---
 
-## 📁 Structura Completă a Proiectului
+## 📁 Structura Proiectului
 
 ```text
-D:\Documente\Agritech\
-├── .idea/                             # Configurație JetBrains IDE
-│   └── runConfigurations/            # Configurații 1-Click Run/Debug
-│       ├── Run_Backend_FastAPI.xml
-│       ├── Run_Frontend_Dev.xml
-│       ├── Run_Pytest_Agronomic.xml
-│       └── Run_Data_Pipeline.xml
-├── docs/                              # Documentația de proiect
-│   ├── ARCHITECTURE.md                # Arhitectura tehnică detaliată
-│   ├── TEAM_TASKS_5_PERSONS.md        # Foaia de lucru pentru cei 5 membri
-│   ├── API_CONTRACT.json              # Contractul JSON Schema standard
-│   ├── DECISIONS_JOURNAL.md           # Jurnalul conversației și al deciziilor
-│   └── QUICKSTART.md                  # Ghid scurt de instalare și rulare
-├── backend/                           # Server Python FastAPI (P2, P3, P4, P5)
-│   ├── venv/                          # Mediu virtual Python izolat
+AgriTech-AI-Guidance/
+├── backend/                           # Server Python FastAPI
 │   ├── app/
-│   │   ├── main.py                    # Punctul de intrare FastAPI
-│   │   ├── core/config.py             # Configurație și variabile .env
-│   │   ├── models/                    # Pydantic Schemas & tabele PostGIS
-│   │   ├── db/session.py              # Conexiune bază de date
-│   │   ├── agronomic_engine/          # PERSOANA 4: Formule deterministe de randament & cost
-│   │   │   ├── crops_database.py      # Baza de date a celor 6 culturi din Moldova
-│   │   │   ├── suitability.py         # Calcul scor potrivire ecologică
-│   │   │   ├── yield_calculator.py    # Randament min-max t/ha bazat pe bonitate
-│   │   │   ├── financial_engine.py    # Calcul deviz cheltuieli MDL/ha & profit
-│   │   │   └── calculator.py          # Fațada calculate_crop_economics()
-│   │   ├── ai_service/                # PERSOANA 5: Google Gemini & Rapoarte
-│   │   │   ├── gemini_client.py       # Client Gemini cu fallback inteligent
-│   │   │   ├── disease_detector.py    # Reguli agronomice risc boli fungice
-│   │   │   ├── prompt_builder.py      # Prompturi structurate în limba română
-│   │   │   ├── chat_service.py        # Asistent conversațional cu memorie
-│   │   │   └── report_generator.py    # Generator raport executiv imprimabil
-│   │   ├── data_pipeline/             # PERSOANA 3: Conectori soluri.gov.md & agrodat.md
-│   │   │   ├── agrodat_extractor.py   # Telemetrie stații meteo
-│   │   │   ├── soluri_extractor.py    # Harta pedologică a solurilor
-│   │   │   ├── spatial_matcher.py     # Intersecție poligon parcelă & distanță stație
-│   │   │   └── seed/                  # Mostre de date reale din Moldova
-│   │   └── api/v1/endpoints/          # PERSOANA 2: Rute API REST
-│   │       ├── mock.py                # Endpoint Mock pentru unblocking Ziua 1
-│   │       ├── parcels.py             # Endpoint principal POST /parcels/analyze
-│   │       ├── soils.py               # GET /soils/lookup
-│   │       ├── weather.py             # GET /weather/telemetry
-│   │       ├── crops.py               # GET /crops/
-│   │       ├── chat.py                # POST /chat/
-│   │       └── reports.py             # POST /reports/html
-│   ├── tests/                         # Pytest: 11 teste unitare trecute cu 100%
+│   │   ├── main.py                    # Entrypoint API
+│   │   ├── core/config.py             # Configurație pydantic și variabile de mediu
+│   │   ├── models/                    # Pydantic Schemas & modele de date
+│   │   ├── db/                        # Conexiune async SQLAlchemy & seed scripts
+│   │   ├── agronomic_engine/          # Modele matematice deterministe (randament, costuri, profit)
+│   │   ├── ai_service/                # Integrare Google Gemini 3.8 Flash & Chat Multimodal
+│   │   ├── data_pipeline/             # Conectori soluri.gov.md & agrodat.md
+│   │   └── api/v1/endpoints/          # Rute API REST (parcele, sol, meteo, chat, rapoarte)
+│   ├── tests/                         # Teste unitare Pytest
 │   ├── requirements.txt
 │   └── Dockerfile
-├── frontend/                          # Aplicație Web PWA (PERSOANA 1)
+├── frontend/                          # Aplicație Web Next.js (App Router)
 │   ├── src/
 │   │   ├── app/
-│   │   │   ├── page.tsx               # Dashboard central complet
-│   │   │   ├── layout.tsx             # Structură HTML & suport Leaflet
-│   │   │   └── globals.css            # Stiluri TailwindCSS & Leaflet
+│   │   │   ├── page.tsx               # Dashboard central integrat
+│   │   │   ├── layout.tsx             # Layout aplicație
+│   │   │   └── api/cadastre/          # Proxy securizat lookup cadastral
 │   │   ├── components/
-│   │   │   ├── Navbar.tsx             # Bară de navigare cu status live/mock
-│   │   │   ├── ParcelMap.tsx          # Hartă satelitară Leaflet cu desenare poligon
-│   │   │   ├── ParcelInfoCard.tsx     # Carduri profil sol + telemetrie meteo
-│   │   │   ├── CropCardsGrid.tsx      # Carduri ierarhice culturi agricole
-│   │   │   ├── FinancialChart.tsx     # Grafic comparativ investiție vs profit
-│   │   │   ├── AIChatPanel.tsx        # Panou asistent Dr. Agro AI
-│   │   │   └── ReportModal.tsx        # Fereastră raport executiv cu funcție de print
-│   │   ├── lib/
-│   │   │   ├── api.ts                 # Client API cu comutare automată pe Mock
-│   │   │   └── types.ts               # Tipuri TypeScript conforme contractului
-│   │   └── mock/defaultParcelData.ts  # Date de simulare de înaltă fidelitate
-│   ├── public/manifest.json           # Configurație PWA
+│   │   │   ├── Navbar.tsx             # Navigare cu scroll fin
+│   │   │   ├── ParcelMap.tsx          # Hartă Leaflet & WMS soluri.gov.md
+│   │   │   ├── ParcelInfoCard.tsx     # Profil pedologic, bonitate, telemetrie meteo
+│   │   │   ├── CropCardsGrid.tsx      # Grilă culturi cu comutator de sortare
+│   │   │   ├── FinancialChart.tsx     # Grafic financiar comparativ
+│   │   │   ├── AIChatPanel.tsx        # Chatbot Dr. Agro AI cu atașamente fișiere
+│   │   │   └── ReportModal.tsx        # Generator raport executiv imprimabil
+│   │   ├── lib/                       # API client și tipuri TypeScript
+│   │   └── mock/                      # Mock dataset de înaltă fidelitate
 │   ├── package.json
 │   └── Dockerfile
-├── docker-compose.yml                 # PostGIS 16 + Redis + Backend + Frontend
-├── .env.example                       # Model variabile de mediu
-└── .gitignore                         # Excluderi Git optimizate
+├── docker-compose.yml
+├── .env.example
+└── README.md
 ```
