@@ -89,11 +89,14 @@ function getBonitateBadge(points: number) {
   return { label: "Clasa IV-V • Degradat / Deficit hidric", color: "border-rose-200 bg-rose-50 text-rose-800" };
 }
 
+import { useLanguage } from "@/i18n/LanguageContext";
+
 export const ParcelInfoCard: React.FC<ParcelInfoCardProps> = ({
   soil,
   climate,
   aiGuidance,
 }) => {
+  const { t, language } = useLanguage();
   const [isCatalogOpen, setIsCatalogOpen] = useState(false);
   const bonitateInfo = getBonitateBadge(soil.bonitate_points);
 
@@ -110,12 +113,12 @@ export const ParcelInfoCard: React.FC<ParcelInfoCardProps> = ({
                   <Layers className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-base font-extrabold tracking-tight text-slate-950">Profil pedologic</h3>
-                  <span className="text-[11px] text-slate-500 font-medium">Sursa: soluri.gov.md</span>
+                  <h3 className="text-base font-extrabold tracking-tight text-slate-950">{t.parcelCard.soilTitle}</h3>
+                  <span className="text-[11px] text-slate-500 font-medium">soluri.gov.md</span>
                 </div>
               </div>
               <span className={`rounded-full border px-2.5 py-1 text-[11px] font-bold ${bonitateInfo.color}`}>
-                Bonitate: {soil.bonitate_points} pct
+                {t.common.bonitate}: {soil.bonitate_points} {language === "ru" ? "баллов" : language === "en" ? "pts" : "pct"}
               </span>
             </div>
 
@@ -125,15 +128,15 @@ export const ParcelInfoCard: React.FC<ParcelInfoCardProps> = ({
 
             <div className="grid grid-cols-3 gap-2 border-t border-slate-100 pt-3 text-center">
               <div className="rounded-xl bg-slate-50 p-2">
-                <span className="block text-[10px] font-bold uppercase tracking-wide text-slate-400">Humus</span>
+                <span className="block text-[10px] font-bold uppercase tracking-wide text-slate-400">{t.parcelCard.humus}</span>
                 <span className="mt-1 block text-sm font-extrabold text-slate-800">{soil.humus_pct}%</span>
               </div>
               <div className="rounded-xl bg-slate-50 p-2">
-                <span className="block text-[10px] font-bold uppercase tracking-wide text-slate-400">pH sol</span>
+                <span className="block text-[10px] font-bold uppercase tracking-wide text-slate-400">{t.parcelCard.ph}</span>
                 <span className="mt-1 block text-sm font-extrabold text-slate-800">{soil.ph}</span>
               </div>
               <div className="rounded-xl bg-slate-50 p-2">
-                <span className="block text-[10px] font-bold uppercase tracking-wide text-slate-400">Eroziune</span>
+                <span className="block text-[10px] font-bold uppercase tracking-wide text-slate-400">{t.parcelCard.erosion}</span>
                 <span className="mt-1 block text-sm font-extrabold capitalize text-slate-800">{soil.erosion_grade}</span>
               </div>
             </div>
@@ -145,7 +148,7 @@ export const ParcelInfoCard: React.FC<ParcelInfoCardProps> = ({
                 className="inline-flex items-center gap-1 font-bold text-emerald-700 hover:text-emerald-800 hover:underline"
               >
                 <BookOpen className="w-3.5 h-3.5" />
-                <span>{isCatalogOpen ? "Ascunde catalog" : "Catalog pedologic"}</span>
+                <span>{isCatalogOpen ? (language === "ru" ? "Скрыть каталог" : language === "en" ? "Hide catalog" : "Ascunde catalog") : t.parcelCard.soilCatalog}</span>
                 {isCatalogOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
               </button>
             </div>
@@ -161,12 +164,12 @@ export const ParcelInfoCard: React.FC<ParcelInfoCardProps> = ({
                   <CloudSun className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-base font-extrabold tracking-tight text-slate-950">Telemetrie agrometeo</h3>
-                  <span className="text-[11px] text-slate-500 font-medium">Sursa: agrodat.md</span>
+                  <h3 className="text-base font-extrabold tracking-tight text-slate-950">{t.parcelCard.climateTitle}</h3>
+                  <span className="text-[11px] text-slate-500 font-medium">agrodat.md</span>
                 </div>
               </div>
               <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-500">
-                Stația {climate.nearest_station_id} ({climate.distance_km} km)
+                {t.parcelCard.station} {climate.nearest_station_id} ({climate.distance_km} km)
               </span>
             </div>
 
@@ -174,7 +177,7 @@ export const ParcelInfoCard: React.FC<ParcelInfoCardProps> = ({
               <div className="flex items-center gap-2">
                 <Droplets className="w-4 h-4 text-sky-500" />
                 <div>
-                  <span className="text-[11px] text-slate-500 block">Umiditate Sol</span>
+                  <span className="text-[11px] text-slate-500 block">{t.context.moisture}</span>
                   <span className="text-sm font-bold text-slate-900">{climate.soil_moisture_pct}%</span>
                 </div>
               </div>
@@ -182,7 +185,7 @@ export const ParcelInfoCard: React.FC<ParcelInfoCardProps> = ({
               <div className="flex items-center gap-2">
                 <Gauge className="w-4 h-4 text-emerald-500" />
                 <div>
-                  <span className="text-[11px] text-slate-500 block">Umiditate Frunză</span>
+                  <span className="text-[11px] text-slate-500 block">{t.parcelCard.leafWetness}</span>
                   <span className="text-sm font-bold text-slate-900">{climate.leaf_wetness_hours} h (24h)</span>
                 </div>
               </div>
@@ -190,7 +193,7 @@ export const ParcelInfoCard: React.FC<ParcelInfoCardProps> = ({
               <div className="flex items-center gap-2">
                 <Wind className="w-4 h-4 text-indigo-500" />
                 <div>
-                  <span className="text-[11px] text-slate-500 block">Precipitații 30z</span>
+                  <span className="text-[11px] text-slate-500 block">{t.parcelCard.precipitations}</span>
                   <span className="text-sm font-bold text-slate-900">{climate.precipitation_last_30d_mm} mm</span>
                 </div>
               </div>
@@ -198,14 +201,14 @@ export const ParcelInfoCard: React.FC<ParcelInfoCardProps> = ({
               <div className="flex items-center gap-2">
                 <Thermometer className="w-4 h-4 text-amber-500" />
                 <div>
-                  <span className="text-[11px] text-slate-500 block">Evapotranspirație ETo</span>
+                  <span className="text-[11px] text-slate-500 block">{t.parcelCard.eto}</span>
                   <span className="text-sm font-bold text-slate-900">{climate.eto_evapotranspiration_mm} mm/zi</span>
                 </div>
               </div>
             </div>
 
             <div className="mt-2 rounded-xl bg-sky-50/70 p-2.5 text-[11px] text-slate-600 border border-sky-100/80">
-              💡 <strong>Impact hidric:</strong> Evapotranspirație de {climate.eto_evapotranspiration_mm} mm/zi (~{Math.round(climate.eto_evapotranspiration_mm * 10)} t apă/ha pierdere zilnică).
+              💡 <strong>{t.parcelCard.eto}:</strong> {climate.eto_evapotranspiration_mm} mm/zi (~{Math.round(climate.eto_evapotranspiration_mm * 10)} t apă/ha).
             </div>
           </div>
         </div>
@@ -275,7 +278,7 @@ export const ParcelInfoCard: React.FC<ParcelInfoCardProps> = ({
             <div>
               <h4 className="text-xs font-extrabold uppercase tracking-[0.14em] text-emerald-900 flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5 text-emerald-700" />
-                Recomandarea asistentului AI
+                {t.parcelCard.aiTitle}
               </h4>
               <p className="text-sm text-slate-700 mt-1 leading-relaxed">
                 {aiGuidance.summary}
@@ -298,7 +301,7 @@ export const ParcelInfoCard: React.FC<ParcelInfoCardProps> = ({
             {aiGuidance.actionable_steps && aiGuidance.actionable_steps.length > 0 && (
               <div className="mt-2 rounded-xl bg-white/80 p-3 border border-emerald-200/60 text-xs text-slate-700">
                 <span className="font-bold text-emerald-900 block mb-1">
-                  Măsuri agrotehnice recomandate:
+                  {t.parcelCard.actionSteps}:
                 </span>
                 <ul className="list-disc pl-5 space-y-1 text-slate-600">
                   {aiGuidance.actionable_steps.map((step, idx) => (

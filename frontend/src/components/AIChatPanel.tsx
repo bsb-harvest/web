@@ -15,6 +15,7 @@ import {
 import { ChatMessage, ParcelAnalysisResponse, ChatAttachment } from "@/lib/types";
 import { sendChatMessage } from "@/lib/api";
 import ReactMarkdown from "react-markdown";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 interface AIChatPanelProps {
   isOpen: boolean;
@@ -27,14 +28,13 @@ export const AIChatPanel: React.FC<AIChatPanelProps> = ({
   onClose,
   analysis,
 }) => {
+  const { t, language } = useLanguage();
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: "init-1",
       sender: "ai",
-      text: `Salut! Sunt Dr. Agro, consultantul tău agronomic AI. Am analizat parcela ta cu suprafața de ${analysis.area_ha.toFixed(1)} ha și profilul de sol ${analysis.soil_profile.type}. 
-
-Îmi poți pune întrebări despre culturi și fertilizare, sau **îmi poți trimite o fotografie cu frunza/planta ori un buletin de analiză de laborator** (sol, NPK, pH, apă) folosind butonul de atașare 📎. Cu ce începem?`,
-      timestamp: "Acum",
+      text: t.chat.initGreeting,
+      timestamp: "00:00",
     },
   ]);
 
@@ -132,12 +132,27 @@ export const AIChatPanel: React.FC<AIChatPanelProps> = ({
     }
   };
 
-  const QUICK_QUESTIONS = [
-    "Ce cantitate de azot (N) recomanzi?",
-    "Cum protejez cultura de secetă?",
-    "Interpretare buletin analiză sol",
-    "Ce asolament recomanzi pentru anul viitor?",
-  ];
+  const QUICK_QUESTIONS =
+    language === "ru"
+      ? [
+          "Какую дозу азота (N) рекомендуете?",
+          "Как защитить культуру от засухи?",
+          "Интерпретация анализа почвы",
+          "Какой севооборот на следующий год?",
+        ]
+      : language === "en"
+      ? [
+          "What nitrogen (N) rate do you recommend?",
+          "How to protect the crop against drought?",
+          "Interpret soil lab test results",
+          "Recommended crop rotation for next year?",
+        ]
+      : [
+          "Ce cantitate de azot (N) recomanzi?",
+          "Cum protejez cultura de secetă?",
+          "Interpretare buletin analiză sol",
+          "Ce asolament recomanzi pentru anul viitor?",
+        ];
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-slate-950/35 p-0 backdrop-blur-sm sm:p-4 md:p-6">
@@ -151,14 +166,14 @@ export const AIChatPanel: React.FC<AIChatPanelProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-base font-extrabold tracking-tight text-slate-900">Dr. Agro AI</h3>
+                <h3 className="text-base font-extrabold tracking-tight text-slate-900">{t.chat.title}</h3>
                 <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-emerald-700">
                   Multimodal 3.8
                 </span>
               </div>
               <p className="mt-0.5 flex items-center gap-1.5 text-xs font-medium text-slate-500">
                 <span className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_0_3px_rgba(16,185,129,0.14)]" />
-                Suport poze, PDF și analize de laborator
+                {t.chat.online}
               </p>
             </div>
           </div>
@@ -166,7 +181,7 @@ export const AIChatPanel: React.FC<AIChatPanelProps> = ({
           <button
             onClick={onClose}
             className="rounded-xl border border-slate-200 bg-white p-2 text-slate-400 shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700"
-            aria-label="Închide Consultant AI"
+            aria-label="Închide"
           >
             <X className="h-5 w-5" />
           </button>
@@ -372,7 +387,7 @@ export const AIChatPanel: React.FC<AIChatPanelProps> = ({
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              title="Atașează buletin de analiză de laborator (PDF/Imagine) sau foto cultură"
+              title={t.chat.attach}
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-200 text-slate-500 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700 transition"
             >
               <Paperclip className="h-4 w-4" />
@@ -384,8 +399,8 @@ export const AIChatPanel: React.FC<AIChatPanelProps> = ({
               onChange={(e) => setInputValue(e.target.value)}
               placeholder={
                 attachments.length > 0
-                  ? "Adaugă un mesaj sau trimite pentru interpretare..."
-                  : "Întreabă sau atașează analiză laborator / foto..."
+                  ? (language === "ru" ? "Добавьте комментарий или отправьте..." : language === "en" ? "Add a message or send for analysis..." : "Adaugă un mesaj sau trimite pentru interpretare...")
+                  : t.chat.placeholder
               }
               className="flex-1 bg-transparent px-2 py-1.5 text-sm text-slate-800 outline-none placeholder:text-slate-400"
             />
@@ -394,10 +409,14 @@ export const AIChatPanel: React.FC<AIChatPanelProps> = ({
               type="submit"
               disabled={isLoading || (!inputValue.trim() && attachments.length === 0)}
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-md shadow-emerald-700/20 transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-40"
+              title={t.chat.send}
             >
               <Send className="h-4 w-4" />
             </button>
           </form>
+          <p className="mt-2 text-center text-[10px] text-slate-400">
+            {t.chat.disclaimer}
+          </p>
         </div>
       </div>
     </div>

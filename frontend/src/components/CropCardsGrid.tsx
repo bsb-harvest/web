@@ -13,6 +13,8 @@ import {
   Layers,
 } from "lucide-react";
 
+import { useLanguage } from "@/i18n/LanguageContext";
+
 interface CropCardsGridProps {
   crops: RecommendedCrop[];
   viewMode?: "per_ha" | "total";
@@ -35,6 +37,7 @@ export const CropCardsGrid: React.FC<CropCardsGridProps> = ({
   areaHa = 0,
   onToggleViewMode,
 }) => {
+  const { t, language } = useLanguage();
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   const [sortBy, setSortBy] = useState<"suitability" | "profit">("suitability");
 
@@ -63,17 +66,17 @@ export const CropCardsGrid: React.FC<CropCardsGridProps> = ({
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-3">
         <div>
           <h3 className="text-xl font-extrabold tracking-tight text-slate-950">
-            Recomandări pentru parcelă
+            {t.recommendations.parcelRecommendations}
           </h3>
           <p className="mt-1 text-sm text-slate-500">
-            Comparație agronomică și rentabilitate financiară transparentă.
+            {t.recommendations.comparisonDesc}
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
           {/* Comutator sortare */}
           <div className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1 text-xs font-bold shadow-2xs">
-            <span className="px-2 text-[10px] uppercase tracking-wide text-slate-400">Sortează</span>
+            <span className="px-2 text-[10px] uppercase tracking-wide text-slate-400">{t.recommendations.sort}</span>
             <button
               onClick={() => handleSortChange("suitability")}
               className={`rounded-lg px-3 py-1.5 transition-all ${
@@ -82,7 +85,7 @@ export const CropCardsGrid: React.FC<CropCardsGridProps> = ({
                   : "text-slate-500 hover:text-slate-900"
               }`}
             >
-              Potrivire
+              {t.recommendations.sortSuitability}
             </button>
             <button
               onClick={() => handleSortChange("profit")}
@@ -92,7 +95,7 @@ export const CropCardsGrid: React.FC<CropCardsGridProps> = ({
                   : "text-slate-500 hover:text-slate-900"
               }`}
             >
-              Profit
+              {t.recommendations.sortProfit}
             </button>
           </div>
 
@@ -106,15 +109,15 @@ export const CropCardsGrid: React.FC<CropCardsGridProps> = ({
                   : "text-slate-500 hover:text-slate-900"
               }`}
             >
-              Per hectar (1 ha)
+              1 {t.common.hectares}
             </button>
             <button
               onClick={() => onToggleViewMode && onToggleViewMode("total")}
               disabled={areaHa <= 0}
               title={
                 areaHa <= 0
-                  ? "Selectează o parcelă pe hartă pentru calculul pe toată suprafața"
-                  : `Calculează pe toată suprafața parcelei (${areaHa} ha)`
+                  ? ""
+                  : `${areaHa} ${t.common.hectares}`
               }
               className={`rounded-lg px-3 py-1.5 transition-all ${
                 isTotal
@@ -122,12 +125,12 @@ export const CropCardsGrid: React.FC<CropCardsGridProps> = ({
                   : "text-slate-500 hover:text-slate-900 disabled:opacity-40 disabled:cursor-not-allowed"
               }`}
             >
-              {areaHa > 0 ? `Toată parcela (${areaHa} ha)` : "Toată parcela (— ha)"}
+              {areaHa > 0 ? `${areaHa} ${t.common.hectares}` : `Total (— ${t.common.hectares})`}
             </button>
           </div>
 
           <span className="hidden rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-emerald-700 sm:inline">
-            {crops.length} culturi analizate
+            {crops.length} {language === "ru" ? "культур" : language === "en" ? "crops" : "culturi"}
           </span>
         </div>
       </div>
@@ -196,12 +199,12 @@ export const CropCardsGrid: React.FC<CropCardsGridProps> = ({
                       </h4>
                       <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
                         <span className="inline-flex items-center rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-700">
-                          Preț piață: {marketPrice.toLocaleString("ro-MD")} MDL/t
+                          {t.recommendations.marketPrice}: {marketPrice.toLocaleString("ro-MD")} {t.common.currency}/t
                         </span>
                         {isTop && (
                           <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-emerald-700">
                             <Award className="h-3 w-3" />{" "}
-                            {sortBy === "profit" ? "Cel mai mare profit" : "Cea mai potrivită"}
+                            {sortBy === "profit" ? t.common.profit : t.recommendations.sortSuitability}
                           </span>
                         )}
                       </div>
@@ -211,7 +214,7 @@ export const CropCardsGrid: React.FC<CropCardsGridProps> = ({
                   {/* Scor Pretabilitate */}
                   <div className="text-right shrink-0">
                     <div className="rounded-lg border border-emerald-100 bg-emerald-50 px-2 py-1 text-[11px] font-bold text-emerald-700">
-                      {crop.suitability_score}% Potrivire
+                      {crop.suitability_score}% {t.recommendations.sortSuitability}
                     </div>
                   </div>
                 </div>
@@ -234,7 +237,7 @@ export const CropCardsGrid: React.FC<CropCardsGridProps> = ({
                 <div className="mb-3 grid grid-cols-3 gap-2 border-y border-slate-100 py-3 text-center">
                   <div>
                     <span className="block text-[10px] font-bold uppercase tracking-wide text-slate-400">
-                      {isTotal ? `Recoltă (${areaHa} ha)` : "Recoltă (t/ha)"}
+                      {isTotal ? `${t.recommendations.estimatedYield} (${areaHa} ${t.common.hectares})` : `${t.recommendations.estimatedYield} (t/${t.common.hectares})`}
                     </span>
                     <span className="mt-1 block text-sm font-extrabold text-slate-800">
                       {isTotal
@@ -246,16 +249,16 @@ export const CropCardsGrid: React.FC<CropCardsGridProps> = ({
                   </div>
                   <div>
                     <span className="block text-[10px] font-bold uppercase tracking-wide text-slate-400">
-                      {isTotal ? "Investiție totală" : "Investiție / ha"}
+                      {isTotal ? `${t.recommendations.estimatedCosts} (total)` : `${t.recommendations.estimatedCosts} / ${t.common.hectares}`}
                     </span>
                     <span className="mt-1 block text-sm font-extrabold text-slate-800">
                       {Math.round(crop.estimated_costs_mdl_ha * multiplier).toLocaleString("ro-MD")}{" "}
-                      <span className="text-[10px] font-medium text-slate-400">MDL</span>
+                      <span className="text-[10px] font-medium text-slate-400">{t.common.currency}</span>
                     </span>
                   </div>
                   <div>
                     <span className="block text-[10px] font-bold uppercase tracking-wide text-slate-400">
-                      {isTotal ? "Profit net total" : "Profit net / ha"}
+                      {isTotal ? `${t.recommendations.netProfit} (total)` : `${t.recommendations.netProfit} / ${t.common.hectares}`}
                     </span>
                     <span
                       className={`mt-1 block text-sm font-extrabold ${
@@ -263,7 +266,7 @@ export const CropCardsGrid: React.FC<CropCardsGridProps> = ({
                       }`}
                     >
                       {Math.round(netAvg * multiplier).toLocaleString("ro-MD")}{" "}
-                      <span className="text-[10px] font-medium opacity-75">MDL</span>
+                      <span className="text-[10px] font-medium opacity-75">{t.common.currency}</span>
                     </span>
                   </div>
                 </div>
@@ -271,9 +274,9 @@ export const CropCardsGrid: React.FC<CropCardsGridProps> = ({
                 {/* Scenarii de Recoltă & Profit (Min / Mediu / Optim) */}
                 <div className="mb-3 rounded-xl border border-slate-100 bg-slate-50/80 p-2.5 text-xs">
                   <div className="mb-1.5 flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                    <span>Interval scenarii profit</span>
+                    <span>{t.recommendations.riskMargin}</span>
                     <span className="text-slate-400">
-                      Prag acoperire cost: <strong>{breakEven} t/ha</strong>
+                      {t.recommendations.breakEven}: <strong>{breakEven} t/{t.common.hectares}</strong>
                     </span>
                   </div>
                   <div className="grid grid-cols-3 gap-1.5 text-center text-[10px]">
@@ -323,8 +326,8 @@ export const CropCardsGrid: React.FC<CropCardsGridProps> = ({
                 >
                   <span>
                     {isExpanded
-                      ? "Ascunde devizul de costuri"
-                      : `Vezi devizul complet & formula (${isTotal ? `${areaHa} ha` : "MDL/ha"})`}
+                      ? t.recommendations.hideDetails
+                      : `${t.recommendations.viewDetails} (${isTotal ? `${areaHa} ${t.common.hectares}` : `${t.common.currency}/${t.common.hectares}`})`}
                   </span>
                   {isExpanded ? (
                     <ChevronUp className="w-3.5 h-3.5" />
@@ -336,63 +339,63 @@ export const CropCardsGrid: React.FC<CropCardsGridProps> = ({
                 {isExpanded && crop.cost_breakdown && (
                   <div className="mt-2 space-y-2 rounded-xl border border-slate-100 bg-slate-50/90 p-3 text-xs text-slate-600">
                     <div className="flex items-center justify-between border-b border-slate-200 pb-1 text-[11px] font-bold uppercase tracking-wider text-slate-700">
-                      <span>Deviz cheltuieli {isTotal ? `(${areaHa} ha)` : "(1 ha)"}</span>
-                      <span>Preț: {marketPrice.toLocaleString("ro-MD")} MDL/t</span>
+                      <span>{t.recommendations.costStructure} {isTotal ? `(${areaHa} ${t.common.hectares})` : `(1 ${t.common.hectares})`}</span>
+                      <span>{t.recommendations.marketPrice}: {marketPrice.toLocaleString("ro-MD")} {t.common.currency}/t</span>
                     </div>
 
                     <div className="flex justify-between">
-                      <span>Semințe certificate:</span>
+                      <span>{language === "ru" ? "Сертифицированные семена" : language === "en" ? "Certified Seeds" : "Semințe certificate"}:</span>
                       <span className="font-semibold text-slate-800">
                         {Math.round(
                           (crop.cost_breakdown.seeds_mdl || 0) * multiplier
                         ).toLocaleString("ro-MD")}{" "}
-                        MDL
+                        {t.common.currency}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Îngrășăminte NPK:</span>
+                      <span>{language === "ru" ? "Удобрения NPK" : language === "en" ? "NPK Fertilizers" : "Îngrășăminte NPK"}:</span>
                       <span className="font-semibold text-slate-800">
                         {Math.round(
                           (crop.cost_breakdown.fertilizers_mdl || 0) * multiplier
                         ).toLocaleString("ro-MD")}{" "}
-                        MDL
+                        {t.common.currency}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Motorină &amp; Carburanți:</span>
+                      <span>{language === "ru" ? "Топливо и дизель" : language === "en" ? "Fuel & Diesel" : "Motorină & Carburanți"}:</span>
                       <span className="font-semibold text-slate-800">
                         {Math.round(
                           (crop.cost_breakdown.fuel_diesel_mdl || 0) * multiplier
                         ).toLocaleString("ro-MD")}{" "}
-                        MDL
+                        {t.common.currency}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Pesticide &amp; Tratamente:</span>
+                      <span>{language === "ru" ? "СЗР и пестициды" : language === "en" ? "Pesticides & Plant Protection" : "Pesticide & Tratamente"}:</span>
                       <span className="font-semibold text-slate-800">
                         {Math.round(
                           (crop.cost_breakdown.pesticides_mdl || 0) * multiplier
                         ).toLocaleString("ro-MD")}{" "}
-                        MDL
+                        {t.common.currency}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Lucrări mecanizate:</span>
+                      <span>{language === "ru" ? "Механизированные работы" : language === "en" ? "Machinery & Labor" : "Lucrări mecanizate"}:</span>
                       <span className="font-semibold text-slate-800">
                         {Math.round(
                           (crop.cost_breakdown.mechanized_labor_mdl || 0) * multiplier
                         ).toLocaleString("ro-MD")}{" "}
-                        MDL
+                        {t.common.currency}
                       </span>
                     </div>
 
                     <div className="flex justify-between border-t border-slate-200 pt-1 font-bold text-slate-900">
-                      <span>Total Investiție (Cheltuieli):</span>
+                      <span>{t.recommendations.estimatedCosts}:</span>
                       <span>
                         {Math.round(
                           crop.estimated_costs_mdl_ha * multiplier
                         ).toLocaleString("ro-MD")}{" "}
-                        MDL
+                        {t.common.currency}
                       </span>
                     </div>
 
@@ -400,25 +403,25 @@ export const CropCardsGrid: React.FC<CropCardsGridProps> = ({
                     <div className="mt-2.5 rounded-lg border border-emerald-200/90 bg-emerald-50/80 p-2.5 text-[11px] text-emerald-950 space-y-1">
                       <p className="font-extrabold text-emerald-900 flex items-center gap-1">
                         <TrendingUp className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
-                        Cum este calculat profitul:
+                        {language === "ru" ? "Формула прибыли:" : language === "en" ? "Profit Calculation:" : "Cum este calculat profitul:"}
                       </p>
                       <p className="leading-relaxed">
-                        • <strong>Venit brut:</strong> {avgYield.toFixed(2)} t/ha ×{" "}
-                        {marketPrice.toLocaleString("ro-MD")} MDL/t{" "}
-                        {isTotal ? `× ${areaHa} ha ` : ""}=&nbsp;
+                        • <strong>{t.recommendations.estimatedRevenue}:</strong> {avgYield.toFixed(2)} t/{t.common.hectares} ×{" "}
+                        {marketPrice.toLocaleString("ro-MD")} {t.common.currency}/t{" "}
+                        {isTotal ? `× ${areaHa} ${t.common.hectares} ` : ""}=&nbsp;
                         <strong>
-                          {Math.round(revenueAvg * multiplier).toLocaleString("ro-MD")} MDL
+                          {Math.round(revenueAvg * multiplier).toLocaleString("ro-MD")} {t.common.currency}
                         </strong>
                       </p>
                       <p className="leading-relaxed">
-                        • <strong>Profit net:</strong> {Math.round(revenueAvg * multiplier).toLocaleString("ro-MD")} MDL (Venit) −{" "}
-                        {Math.round(crop.estimated_costs_mdl_ha * multiplier).toLocaleString("ro-MD")} MDL (Cost) =&nbsp;
+                        • <strong>{t.recommendations.netProfit}:</strong> {Math.round(revenueAvg * multiplier).toLocaleString("ro-MD")} {t.common.currency} −{" "}
+                        {Math.round(crop.estimated_costs_mdl_ha * multiplier).toLocaleString("ro-MD")} {t.common.currency} =&nbsp;
                         <strong className="text-emerald-700">
-                          +{Math.round(netAvg * multiplier).toLocaleString("ro-MD")} MDL
+                          +{Math.round(netAvg * multiplier).toLocaleString("ro-MD")} {t.common.currency}
                         </strong>
                       </p>
                       <p className="leading-relaxed text-slate-600 text-[10px] pt-0.5 border-t border-emerald-200/60">
-                        * Prag rentabilitate: ai nevoie de minim <strong>{breakEven} t/ha</strong> pentru a acoperi cheltuielile de producție.
+                        * {t.recommendations.breakEven}: min <strong>{breakEven} t/{t.common.hectares}</strong>.
                       </p>
                     </div>
                   </div>

@@ -3,6 +3,8 @@
 import React from "react";
 import { RecommendedCrop } from "@/lib/types";
 
+import { useLanguage } from "@/i18n/LanguageContext";
+
 interface FinancialChartProps {
   crops: RecommendedCrop[];
   viewMode?: "per_ha" | "total";
@@ -16,6 +18,7 @@ export const FinancialChart: React.FC<FinancialChartProps> = ({
   areaHa = 0,
   onToggleViewMode,
 }) => {
+  const { t } = useLanguage();
   const isTotal = viewMode === "total" && areaHa > 0;
   const multiplier = isTotal ? areaHa : 1;
 
@@ -39,12 +42,12 @@ export const FinancialChart: React.FC<FinancialChartProps> = ({
       <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
         <div>
           <h3 className="text-lg font-extrabold tracking-tight text-slate-950">
-            Investiție vs. profit net
+            {t.financial.chartTitle}
           </h3>
           <p className="mt-1 text-sm text-slate-500">
             {isTotal
-              ? `Comparație economică pe toată suprafața parcelei (${areaHa} ha), în MDL.`
-              : "Comparație economică pe hectar (1 ha), în MDL."}
+              ? t.financial.chartSubtitleTotal.replace("{area}", String(areaHa))
+              : t.financial.chartSubtitlePerHa}
           </p>
         </div>
 
@@ -52,11 +55,11 @@ export const FinancialChart: React.FC<FinancialChartProps> = ({
           {/* Legendă */}
           <div className="flex items-center gap-1.5">
             <span className="inline-block h-3 w-3 rounded bg-slate-300" />
-            <span className="text-slate-600">Investiție (Cost)</span>
+            <span className="text-slate-600">{t.financial.legendCost}</span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="inline-block h-3 w-3 rounded bg-emerald-500" />
-            <span className="text-slate-600">Profit Net</span>
+            <span className="text-slate-600">{t.financial.legendProfit}</span>
           </div>
 
           {/* Comutator Per Hectar / Total */}
@@ -70,15 +73,15 @@ export const FinancialChart: React.FC<FinancialChartProps> = ({
                     : "text-slate-500 hover:text-slate-900"
                 }`}
               >
-                1 ha
+                1 {t.common.hectares}
               </button>
               <button
                 onClick={() => onToggleViewMode("total")}
                 disabled={areaHa <= 0}
                 title={
                   areaHa <= 0
-                    ? "Selectează o parcelă pe hartă pentru a calcula pe toată suprafața"
-                    : `Calculează pe toată suprafața (${areaHa} ha)`
+                    ? ""
+                    : `${areaHa} ${t.common.hectares}`
                 }
                 className={`rounded-lg px-2.5 py-1 transition-all ${
                   isTotal
@@ -86,7 +89,7 @@ export const FinancialChart: React.FC<FinancialChartProps> = ({
                     : "text-slate-500 hover:text-slate-900 disabled:opacity-40 disabled:cursor-not-allowed"
                 }`}
               >
-                {areaHa > 0 ? `Toată parcela (${areaHa} ha)` : "Toată parcela"}
+                {areaHa > 0 ? `${areaHa} ${t.common.hectares}` : `Total (— ${t.common.hectares})`}
               </button>
             </div>
           )}

@@ -16,6 +16,8 @@ export const viewport: Viewport = {
   themeColor: "#16a34a",
 };
 
+import { LanguageProvider } from "@/i18n/LanguageContext";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -24,7 +26,7 @@ export default function RootLayout({
   return (
     <html lang="ro">
       <body className="min-h-screen flex flex-col antialiased selection:bg-emerald-500 selection:text-white">
-        {children}
+        <LanguageProvider>{children}</LanguageProvider>
       </body>
     </html>
   );

@@ -44,6 +44,8 @@ function calculatePolygonAreaHa(coords: number[][]): number {
   return Math.abs(area / 2) / 10000;
 }
 
+import { useLanguage } from "@/i18n/LanguageContext";
+
 export const ParcelMap: React.FC<ParcelMapProps> = ({
   coordinates,
   areaHa,
@@ -55,6 +57,7 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
   onAnalyze,
   isAnalyzing,
 }) => {
+  const { t } = useLanguage();
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
   const polygonRef = useRef<any>(null);
@@ -603,10 +606,10 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
         <div className="flex items-center gap-2">
           <span className="flex h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_0_3px_rgba(34,197,94,0.18)]" />
           <span className="text-xs font-bold text-slate-800">
-            Harta Cadastrală Interactivă
+            {t.mapSection.interactiveTitle}
           </span>
           <span className="hidden text-[11px] text-slate-400 sm:inline">
-            • Atingeți sau faceți clic oriunde pe hartă pentru a selecta o parcelă
+            {t.mapSection.interactiveHint}
           </span>
         </div>
 
@@ -620,7 +623,7 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
-            Satelit
+            {t.mapSection.satellite}
           </button>
           <button
             onClick={() => toggleLayer("streets")}
@@ -630,7 +633,7 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
-            Străzi
+            {t.mapSection.streets}
           </button>
           <button
             onClick={toggleSoilWms}
@@ -642,7 +645,7 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
             }`}
           >
             <Layers className="w-3.5 h-3.5" />
-            <span>Soluri WMS</span>
+            <span>{t.mapSection.soilsWms}</span>
           </button>
         </div>
       </div>
@@ -657,7 +660,7 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
               value={inputCode}
               onChange={(e) => setInputCode(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSearchCode(inputCode)}
-              placeholder="Introduceți numărul cadastral (ex: 0300987654)..."
+              placeholder={t.mapSection.searchPlaceholder}
               className="w-full rounded-xl border-0 bg-transparent py-2 pl-9 pr-3 text-sm font-medium text-slate-800 outline-none ring-0 placeholder:text-slate-400 focus:border-0 focus:outline-none focus:ring-0"
             />
           </div>
@@ -666,17 +669,17 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
             disabled={isSearching}
             className="shrink-0 rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-200 transition"
           >
-            {isSearching ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Caută"}
+            {isSearching ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : t.mapSection.searchButton}
           </button>
         </div>
 
         <div className="flex items-center gap-3">
           <div className="text-right">
             <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-              Suprafață
+              {t.mapSection.surface}
             </div>
             <div className="text-sm font-extrabold text-slate-900">
-              {calculatedArea > 0 ? `${calculatedArea.toFixed(2)} ha` : "-- ha"}
+              {calculatedArea > 0 ? `${calculatedArea.toFixed(2)} ${t.common.hectares}` : `-- ${t.common.hectares}`}
             </div>
           </div>
 
@@ -684,23 +687,23 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
             <div className="flex items-center gap-1.5">
               <button
                 onClick={startDrawing}
-                title="Desenează liber un contur de parcelă pe hartă"
+                title={t.mapSection.draw}
                 className="hidden rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50 sm:flex sm:items-center sm:gap-1.5"
               >
                 <Edit3 className="w-3.5 h-3.5 text-emerald-600" />
-                <span>Desenează</span>
+                <span>{t.mapSection.draw}</span>
               </button>
               <button
                 onClick={() => onAnalyze(inputCode, currentCoords, calculatedArea)}
                 disabled={isAnalyzing || currentCoords.length < 3}
-                title={currentCoords.length < 3 ? "Selectează mai întâi o parcelă pe hartă" : "Analizează parcela"}
+                title={currentCoords.length < 3 ? t.mapSection.noParcelSelected : t.mapSection.analyzeParcel}
                 className="flex items-center gap-2 rounded-xl bg-agri-600 px-3 py-2 text-xs font-bold text-white shadow-md shadow-emerald-700/20 transition-all hover:bg-agri-700 disabled:opacity-50 disabled:cursor-not-allowed sm:px-4 sm:text-sm"
               >
                 <Sparkles className={`w-4 h-4 ${isAnalyzing ? "animate-spin" : ""}`} />
                 <span className="hidden sm:inline">
-                  {isAnalyzing ? "Se analizează..." : "Analizează parcela"}
+                  {isAnalyzing ? t.common.analyzing : t.mapSection.analyzeParcel}
                 </span>
-                <span className="sm:hidden">Analizează</span>
+                <span className="sm:hidden">{t.mapSection.analyzeParcel}</span>
               </button>
             </div>
           ) : (
@@ -710,14 +713,14 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
                 className="flex items-center gap-1 rounded-xl bg-emerald-600 px-3 py-2 text-xs font-bold text-white shadow-sm hover:bg-emerald-700"
               >
                 <Check className="w-3.5 h-3.5" />
-                <span>Finalizează ({drawPoints.length})</span>
+                <span>{t.mapSection.finishDrawing} ({drawPoints.length})</span>
               </button>
               <button
                 onClick={cancelDrawing}
                 className="flex items-center gap-1 rounded-xl bg-slate-200 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-300"
               >
                 <X className="w-3.5 h-3.5" />
-                <span>Anulează</span>
+                <span>{t.mapSection.cancelDrawing}</span>
               </button>
             </div>
           )}
@@ -760,14 +763,14 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
           <span>
             {currentCoords.length >= 3 ? (
               <>
-                Poligon activ: <strong>{currentCoords.length} noduri GPS</strong>
+                {t.mapSection.activePolygon}: <strong>{currentCoords.length} GPS</strong>
               </>
             ) : (
               <>
-                Nicio parcelă selectată <span className="text-slate-400 font-normal">(apasă pe teren sau caută cod)</span>
+                {t.mapSection.noParcelSelected} <span className="text-slate-400 font-normal">{t.mapSection.clickOrSearchPrompt}</span>
               </>
             )}
-            {showSoils && <span className="ml-1.5 text-emerald-700 font-bold">&bull; Soluri WMS ON</span>}
+            {showSoils && <span className="ml-1.5 text-emerald-700 font-bold">{t.mapSection.soilsOn}</span>}
           </span>
         </div>
 
@@ -775,7 +778,7 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
         <div className="absolute bottom-4 right-4 z-20 hidden w-64 rounded-2xl border border-white/80 bg-white/95 p-4 shadow-xl shadow-slate-900/15 backdrop-blur md:block">
           <div className="flex items-center justify-between gap-2">
             <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">
-              {currentCoords.length >= 3 ? "Parcelă selectată" : "Hartă Moldova"}
+              {currentCoords.length >= 3 ? t.mapSection.selectedParcel : t.mapSection.mapMoldova}
             </span>
             <span
               className={`h-2 w-2 rounded-full ${
@@ -789,24 +792,24 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
             <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
             <div className="min-w-0">
               <p className="font-bold text-slate-900">
-                {currentCoords.length >= 3 ? "Parcela activă" : "Selectează parcelă"}
+                {currentCoords.length >= 3 ? t.mapSection.activeParcelTitle : t.mapSection.selectParcelPrompt}
               </p>
               <p className="truncate text-xs font-mono font-semibold text-slate-500">
-                {inputCode || cadastralCode ? `#${inputCode || cadastralCode}` : "Apasă pe teren sau caută cod"}
+                {inputCode || cadastralCode ? `#${inputCode || cadastralCode}` : t.mapSection.clickOrSearchPrompt}
               </p>
             </div>
           </div>
           <p className="mt-3 text-3xl font-extrabold tracking-tight text-slate-950">
             {calculatedArea > 0 ? calculatedArea.toFixed(2) : "--"}{" "}
-            <span className="text-sm font-bold text-slate-400">ha</span>
+            <span className="text-sm font-bold text-slate-400">{t.common.hectares}</span>
           </p>
           <div className="mt-3 flex items-center justify-between gap-2 border-t border-slate-100 pt-3 text-xs">
             <span className="truncate text-slate-500">
               {isAnalyzing
-                ? "Se analizează solul..."
+                ? t.mapSection.analyzingSoil
                 : currentCoords.length >= 3
                 ? soilType
-                : "Așteptare selecție teren"}
+                : t.mapSection.waitingSelection}
             </span>
             <span className="shrink-0 rounded-lg bg-emerald-50 px-2 py-1 font-bold text-emerald-700">
               {isAnalyzing

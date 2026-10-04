@@ -23,7 +23,10 @@ import {
   TrendingUp,
 } from "lucide-react";
 
+import { useLanguage } from "@/i18n/LanguageContext";
+
 export default function Home() {
+  const { t } = useLanguage();
   const [analysis, setAnalysis] = useState<ParcelAnalysisResponse>(DEFAULT_PARCEL_DATA);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -120,13 +123,13 @@ export default function Home() {
             <div aria-hidden="true" className="field-lines pointer-events-none absolute -left-10 top-[-7rem] h-72 w-[34rem] opacity-[0.13]" />
             <div className="hero-badge mb-4 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.17em] text-emerald-700 shadow-sm">
               <Sparkles className="h-3.5 w-3.5" />
-              Ghid agronomic inteligent
+              {t.hero.badge}
             </div>
             <h1 className="hero-heading relative max-w-3xl text-4xl font-extrabold tracking-[-0.055em] text-[#17211B] sm:text-5xl lg:text-[58px] lg:leading-[1.02]">
-              Transformă datele parcelei în decizii agricole mai bune.
+              {t.hero.title}
             </h1>
             <p className="hero-copy relative mt-5 max-w-2xl text-base leading-7 text-[#647067] sm:text-lg">
-              Selectează o parcelă, analizează solul și descoperă culturile recomandate pentru un sezon mai predictibil și mai profitabil.
+              {t.hero.subtitle}
             </p>
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <button
@@ -139,7 +142,7 @@ export default function Home() {
                 className="hero-action inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-emerald-700/20 transition hover:-translate-y-0.5 hover:bg-emerald-700"
               >
                 <Sparkles className="h-4 w-4" />
-                Selectează parcela pe hartă
+                {t.hero.selectOnMap}
                 <ArrowUpRight className="h-4 w-4" />
               </button>
             </div>
@@ -149,7 +152,7 @@ export default function Home() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5 text-base font-bold text-slate-800">
                 <div className="rounded-xl bg-emerald-100 p-2.5 text-emerald-700"><Leaf className="h-5 w-5" /></div>
-                Rezumat parcelă
+                {t.hero.parcelSummary}
               </div>
               <div className="flex items-center gap-1 rounded-xl bg-slate-100 p-1 text-[11px] font-bold">
                 <button
@@ -160,15 +163,15 @@ export default function Home() {
                       : "text-slate-500 hover:text-slate-800"
                   }`}
                 >
-                  1 ha
+                  1 {t.common.hectares}
                 </button>
                 <button
                   onClick={() => analysis.area_ha > 0 && setViewMode("total")}
                   disabled={analysis.area_ha <= 0}
                   title={
                     analysis.area_ha > 0
-                      ? `Calculează pe toată suprafața (${analysis.area_ha} ha)`
-                      : "Selectează o parcelă pentru a activa calculul pe toată suprafața"
+                      ? `${analysis.area_ha} ${t.common.hectares}`
+                      : ""
                   }
                   className={`rounded-lg px-2.5 py-1 transition ${
                     isTotalView
@@ -176,31 +179,31 @@ export default function Home() {
                       : "text-slate-500 hover:text-slate-800 disabled:opacity-40"
                   }`}
                 >
-                  {analysis.area_ha > 0 ? `${analysis.area_ha} ha` : "Total"}
+                  {analysis.area_ha > 0 ? `${analysis.area_ha} ${t.common.hectares}` : "Total"}
                 </button>
               </div>
             </div>
             <div className="mt-7 grid grid-cols-2 gap-6">
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.13em] text-slate-400">Bonitate</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.13em] text-slate-400">{t.common.bonitate}</p>
                 <p className="mt-1 text-3xl font-extrabold tracking-tight text-slate-900">{analysis.soil_profile.bonitate_points}<span className="text-base text-slate-400">/100</span></p>
               </div>
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-[0.13em] text-slate-400">
-                  {isTotalView ? `Profit (${analysis.area_ha} ha)` : "Profit recomandat (1 ha)"}
+                  {isTotalView ? `${t.common.profit} (${analysis.area_ha} ${t.common.hectares})` : `${t.common.recommendedProfit} (1 ${t.common.hectares})`}
                 </p>
                 <p className="mt-1 text-3xl font-extrabold tracking-tight text-emerald-700">
                   {Math.round(bestProfit).toLocaleString("ro-MD")}{" "}
-                  <span className="text-sm font-bold text-slate-400">MDL</span>
+                  <span className="text-sm font-bold text-slate-400">{t.common.currency}</span>
                 </p>
               </div>
             </div>
             <div className="mt-6 flex items-center gap-2 border-t border-slate-100 pt-5 text-sm text-slate-500">
               <Activity className="h-4 w-4 text-emerald-600" />
               <span>
-                {bestCrop?.crop_name || "Alege o cultură"} este recomandarea curentă{" "}
+                {bestCrop?.crop_name || t.hero.chooseCrop} {t.hero.currentRecommendation}{" "}
                 <span className="font-semibold text-slate-700">
-                  ({isTotalView ? `total parcelă` : "per hectar"})
+                  ({isTotalView ? t.common.totalParcel : t.common.perHectare})
                 </span>
               </span>
             </div>
@@ -210,18 +213,18 @@ export default function Home() {
         <section id="map" className="page-section scroll-mt-24 space-y-4">
           <div className="flex flex-wrap items-end justify-between gap-3 px-1">
             <div>
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-700">01 / Localizare</p>
-              <h2 className="mt-1 text-2xl font-extrabold tracking-tight text-[#17211B]">Harta parcelei</h2>
-              <p className="mt-1 text-sm text-[#647067]">Caută un număr cadastral, selectează direct pe hartă sau desenează conturul parcelei.</p>
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-700">{t.mapSection.eyebrow}</p>
+              <h2 className="mt-1 text-2xl font-extrabold tracking-tight text-[#17211B]">{t.mapSection.title}</h2>
+              <p className="mt-1 text-sm text-[#647067]">{t.mapSection.subtitle}</p>
             </div>
             <button
               onClick={() => handleRunAnalysis()}
               disabled={isAnalyzing || currentCoords.length < 3}
-              title={currentCoords.length < 3 ? "Selectează mai întâi o parcelă pe hartă" : "Actualizează datele"}
+              title={currentCoords.length < 3 ? t.mapSection.noParcelSelected : t.common.updateData}
               className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:border-emerald-300 hover:text-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <RefreshCw className={`h-3.5 w-3.5 ${isAnalyzing ? "animate-spin" : ""}`} />
-              Actualizează datele
+              {isAnalyzing ? t.common.analyzing : t.common.updateData}
             </button>
           </div>
           <ParcelMap
@@ -238,20 +241,20 @@ export default function Home() {
         </section>
 
         <section id="analysis" className="page-section scroll-mt-24 grid grid-cols-2 gap-3 md:grid-cols-4">
-          <MetricCard icon={Leaf} label="Bonitate sol" value={`${analysis.soil_profile.bonitate_points}/100`} detail={analysis.soil_profile.type} tone="green" />
-          <MetricCard icon={Droplets} label="Umiditate" value={`${analysis.climate_telemetry.soil_moisture_pct}%`} detail="Rezervă utilă de apă" tone="blue" />
-          <MetricCard icon={CloudSun} label="Telemetrie meteo" value={`${analysis.climate_telemetry.eto_evapotranspiration_mm} mm`} detail={`ETo / zi · ${analysis.climate_telemetry.distance_km} km`} tone="amber" />
+          <MetricCard icon={Leaf} label={t.context.soilBonitate} value={`${analysis.soil_profile.bonitate_points}/100`} detail={analysis.soil_profile.type} tone="green" />
+          <MetricCard icon={Droplets} label={t.context.moisture} value={`${analysis.climate_telemetry.soil_moisture_pct}%`} detail={t.context.moistureDetail} tone="blue" />
+          <MetricCard icon={CloudSun} label={t.context.weatherTelemetry} value={`${analysis.climate_telemetry.eto_evapotranspiration_mm} mm`} detail={`${t.context.weatherDetail} · ${analysis.climate_telemetry.distance_km} km`} tone="amber" />
           <MetricCard
             icon={TrendingUp}
-            label={isTotalView ? `Profit (${analysis.area_ha} ha)` : "Profit recomandat"}
-            value={`${Math.round(bestProfit).toLocaleString("ro-MD")} MDL`}
-            detail={`${bestCrop?.crop_name || "Cultura optimă"} · ${isTotalView ? `total parcelă` : "per hectar"}`}
+            label={isTotalView ? `${t.common.profit} (${analysis.area_ha} ${t.common.hectares})` : t.context.profitLabel}
+            value={`${Math.round(bestProfit).toLocaleString("ro-MD")} ${t.common.currency}`}
+            detail={`${bestCrop?.crop_name || t.context.optimalCrop} · ${isTotalView ? t.common.totalParcel : t.common.perHectare}`}
             tone="violet"
           />
         </section>
 
         <section className="page-section space-y-4">
-          <SectionHeading eyebrow="02 / Context" title="Înțelege terenul înainte de decizie" description="Profilul solului, telemetria și recomandarea AI într-o singură privire." />
+          <SectionHeading eyebrow={t.context.eyebrow} title={t.context.title} description={t.context.subtitle} />
           <ParcelInfoCard
             soil={analysis.soil_profile}
             climate={analysis.climate_telemetry}
@@ -260,7 +263,7 @@ export default function Home() {
         </section>
 
         <section id="recommendations" className="page-section content-panel scroll-mt-24 rounded-[28px] border border-slate-200/80 bg-white/65 p-4 shadow-sm sm:p-6">
-          <SectionHeading eyebrow="03 / Recomandări" title="Culturile potrivite pentru parcela ta" description="Compară rapid potrivirea, randamentul și profitul net estimat." />
+          <SectionHeading eyebrow={t.recommendations.eyebrow} title={t.recommendations.title} description={t.recommendations.subtitle} />
           <div className="mt-5">
             <CropCardsGrid
               crops={analysis.recommended_crops}
@@ -272,7 +275,7 @@ export default function Home() {
         </section>
 
         <section id="financial" className="page-section content-panel scroll-mt-24 rounded-[28px] border border-slate-200/80 bg-white/65 p-4 shadow-sm sm:p-6">
-          <SectionHeading eyebrow="04 / Financiar" title="Profitabilitate transparentă" description="Vezi cum se raportează investiția la profitul net pentru fiecare cultură." />
+          <SectionHeading eyebrow={t.financial.eyebrow} title={t.financial.title} description={t.financial.subtitle} />
           <div className="mt-5">
             <FinancialChart
               crops={analysis.recommended_crops}
@@ -287,10 +290,10 @@ export default function Home() {
       <button
         onClick={() => setIsChatOpen(true)}
         className="chat-launcher fixed bottom-5 right-5 z-40 inline-flex items-center gap-2 rounded-full bg-slate-950 px-4 py-3 text-sm font-bold text-white shadow-2xl shadow-slate-900/25 transition hover:-translate-y-1 hover:bg-emerald-700 focus:outline-none focus:ring-4 focus:ring-emerald-200"
-        aria-label="Deschide Consultant AI"
+        aria-label={t.common.aiConsultant}
       >
         <Bot className="h-4 w-4 text-emerald-300" />
-        <span className="hidden sm:inline">Consultant AI</span>
+        <span className="hidden sm:inline">{t.common.aiConsultant}</span>
       </button>
 
       <AIChatPanel isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} analysis={analysis} />
@@ -299,7 +302,7 @@ export default function Home() {
       <footer className="mt-10 border-t border-slate-200/80 bg-white/70 py-8 text-center text-xs text-slate-500 backdrop-blur">
         <div className="mx-auto max-w-[1480px] space-y-2 px-4">
           <p className="font-bold tracking-tight text-slate-700">AgriTech AI Guidance Moldova <span className="mx-1 text-emerald-500">•</span> 2026</p>
-          <p>Decizii agronomice inteligente, susținute de date locale și calcule transparente.</p>
+          <p>{t.footer.tagline}</p>
         </div>
       </footer>
     </div>
