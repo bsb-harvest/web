@@ -54,6 +54,18 @@ app.add_middleware(
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
 
+from fastapi.responses import JSONResponse
+from fastapi import Request
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.exception("Eroare necaptată pe server: %s", exc)
+    return JSONResponse(
+        status_code=500,
+        content={"error": "InternalServerError", "detail": str(exc)},
+        headers={"Access-Control-Allow-Origin": "*"}
+    )
+
 @app.get("/", tags=["Health"])
 async def root():
     return {
