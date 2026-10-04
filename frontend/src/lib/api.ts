@@ -7,8 +7,8 @@ import {
   ChatMessageResponse,
 } from "./types";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const rawBaseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_BASE_URL = rawBaseUrl.replace(/\/+$/, "");
 
 export interface AnalyzeParcelParams {
   cadastral_code?: string;
@@ -30,7 +30,7 @@ export async function analyzeParcel(
 ): Promise<AnalyzeParcelResult> {
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000);
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
 
     const payload: ParcelAnalyzeRequest = {
       cadastral_code: params.cadastral_code,
@@ -38,7 +38,10 @@ export async function analyzeParcel(
       area_ha: params.area_ha,
     };
 
-    const res = await fetch(`${API_BASE_URL}/api/v1/parcels/analyze`, {
+    const targetUrl = `${API_BASE_URL}/api/v1/parcels/analyze`;
+    console.info(`[analyzeParcel] Apel către: ${targetUrl}`, payload);
+
+    const res = await fetch(targetUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -51,10 +54,18 @@ export async function analyzeParcel(
 
     if (res.ok) {
       const data: ParcelAnalysisResponse = await res.json();
+      console.info("[analyzeParcel] Răspuns primit de la backend FastAPI:", data.parcel_id);
       return { data, isMock: false };
+    } else {
+      const errorText = await res.text().catch(() => "");
+      console.warn(`[analyzeParcel] Backend a returnat HTTP ${res.status}: ${errorText}`);
     }
-  } catch (err) {
-    console.warn("Backend FastAPI indisponibil, folosire fallback Mock:", err);
+  } catch (err: any) {
+    if (err?.name === "AbortError") {
+      console.warn("[analyzeParcel] Timeout depășit (30s) la apelul backend. Se folosește datele locale de rezervă.");
+    } else {
+      console.warn("[analyzeParcel] Backend FastAPI indisponibil:", err);
+    }
   }
 
   // Fallback garantat Zero-blocking
@@ -86,9 +97,12 @@ export async function sendChatMessage(
 ): Promise<string> {
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 20000);
+    const timeoutId = setTimeout(() => controller.abort(), 45000);
 
-    const res = await fetch(`${API_BASE_URL}/api/v1/chat/`, {
+    const chatUrl = `${API_BASE_URL}/api/v1/chat/`;
+    console.info(`[sendChatMessage] Apel către: ${chatUrl} (parcelId: ${parcelId})`);
+
+    const res = await fetch(chatUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -107,9 +121,16 @@ export async function sendChatMessage(
     if (res.ok) {
       const data: ChatMessageResponse = await res.json();
       return data.reply;
+    } else {
+      const errText = await res.text().catch(() => "");
+      console.warn(`[sendChatMessage] Backend a returnat HTTP ${res.status}: ${errText}`);
     }
-  } catch (err) {
-    console.warn("Eroare chat backend, generare răspuns local:", err);
+  } catch (err: any) {
+    if (err?.name === "AbortError") {
+      console.warn("[sendChatMessage] Timeout depășit (45s) pentru răspunsul AI Gemini.");
+    } else {
+      console.warn("Eroare chat backend, generare răspuns local:", err);
+    }
   }
 
   // Răspuns de rezervă când backend-ul nu este activ
