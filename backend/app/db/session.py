@@ -29,10 +29,7 @@ def _build_connect_args() -> dict:
         candidate = Path(settings.DB_SSL_CA_PATH)
         ca_path = candidate if candidate.is_absolute() else (BACKEND_ROOT / candidate)
         if not ca_path.exists():
-            raise FileNotFoundError(
-                f"Certificatul CA nu a fost gasit: {ca_path}. "
-                "Verifica DB_SSL_CA_PATH din .env sau goleste-l pentru conexiune locala fara TLS."
-            )
+            ca_path = None
     else:
         ca_candidates = [
             Path("ca.pem"),
@@ -44,9 +41,17 @@ def _build_connect_args() -> dict:
         if found and ("aivencloud.com" in db_url or "ssl" in db_url):
             ca_path = found
 
-    if ca_path:
+    # Dacă avem fișier CA, îl folosim
+    if ca_path and ca_path.exists():
         ssl_ctx = ssl.create_default_context(cafile=str(ca_path))
         ssl_ctx.check_hostname = False
+        return {"ssl": ssl_ctx}
+
+    # Dacă suntem pe Aiven Cloud dar ca.pem nu este pe disc, folosim conexiune SSL fără verificare strictă de CA
+    if "aivencloud.com" in db_url or "sslmode=require" in settings.DATABASE_URL:
+        ssl_ctx = ssl.create_default_context()
+        ssl_ctx.check_hostname = False
+        ssl_ctx.verify_mode = ssl.CERT_NONE
         return {"ssl": ssl_ctx}
 
     return {}
