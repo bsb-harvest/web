@@ -119,16 +119,16 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
           const cornerIcon = L.divIcon({
             className: "corner-handle",
             html: `<div style="
-              width: 14px;
-              height: 14px;
+              width: 16px;
+              height: 16px;
               background: #ffffff;
               border: 3px solid #16a34a;
               border-radius: 50%;
               box-shadow: 0 2px 6px rgba(0,0,0,0.45);
               cursor: grab;
-              transform: translate(-7px, -7px);
             "></div>`,
-            iconSize: [0, 0],
+            iconSize: [16, 16],
+            iconAnchor: [8, 8],
           });
 
           const working = [...latLngs];
@@ -140,7 +140,12 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
               title: `Colț #${idx + 1} (Trage pentru a ajusta)`,
             });
 
+            marker.on("dragstart", () => {
+              isInternalUpdateRef.current = true;
+            });
+
             marker.on("drag", (e: any) => {
+              isInternalUpdateRef.current = true;
               const pos = e.target.getLatLng();
               working[idx] = [pos.lat, pos.lng];
               polygonRef.current.setLatLngs(working as any);
@@ -158,6 +163,7 @@ export const ParcelMap: React.FC<ParcelMapProps> = ({
             });
 
             marker.on("dragend", () => {
+              isInternalUpdateRef.current = true;
               const newCoords = working.map((pt: any) => [
                 Number(pt[1].toFixed(5)),
                 Number(pt[0].toFixed(5)),
